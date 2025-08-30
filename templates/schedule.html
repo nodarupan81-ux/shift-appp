@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ store_name }} - {{ year }}年{{ month }}月 シフト表</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="header">
+    <div class="container header-inner">
+      <h1 class="title">{{ store_name }} - {{ year }}年{{ month }}月 シフト表</h1>
+
+      <div class="nav">
+        <a href="{{ url_for(is_admin and 'schedule' or 'view', store_id=store_id, year=prev_year, month=prev_month) }}">&laquo; 前の月</a>
+        <a href="{{ url_for(is_admin and 'schedule' or 'view', store_id=store_id, year=now.year, month=now.month) }}">今月へ</a>
+        <a href="{{ url_for(is_admin and 'schedule' or 'view', store_id=store_id, year=next_year, month=next_month) }}">次の月 &raquo;</a>
+      </div>
+
+      <form class="ym-form" action="{{ url_for(is_admin and 'schedule' or 'view', store_id=store_id) }}" method="get">
+        年
+        <select name="year">
+          {% for y in year_options %}
+            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+        月
+        <select name="month">
+          {% for m in month_options %}
+            <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit">移動</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="actions">
+      {% if is_admin %}
+        <a href="{{ url_for('settings', store_id=store_id) }}">⚙ 名簿・定員設定</a> |
+        <a href="{{ url_for('logout') }}">ログアウト</a>
+      {% else %}
+        <a href="{{ url_for('login_admin', store_id=store_id, next=url_for('schedule', store_id=store_id, year=year, month=month)) }}">管理者ログイン</a>
+      {% endif %}
+    </div>
+
+    <div class="table-wrap">
+      {% if is_admin %}
+      <form method="post" action="{{ url_for('schedule', store_id=store_id) }}">
+        <input type="hidden" name="year" value="{{ year }}">
+        <input type="hidden" name="month" value="{{ month }}">
+      {% endif %}
+
+      <table class="shift-table">
+        <thead>
+          <tr>
+            <th class="wcol">週</th>
+            {% for wd in weekdays %}
+              <th>{{ wd }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for week in weeks %}
+          <tr>
+            <th class="wcol">第{{ loop.index }}週</th>
+
+            {% for day in week %}
+            <td class="cell">
+              {% if day != 0 %}
+                <div class="day">
+                  <div class="daynum">{{ day }}日</div>
+                </div>
+
+                {% for s in shifts %}
+                  {% set slots = prefill.get(day, {}).get(s, ["", ""]) %}
+                  <div class="shift">
+                    <div class="shift-label">{{ shifts_labels[s] }}</div>
+
+                    {% if is_admin %}
+                      <div class="inputs {% if not slots[0] and not slots[1] %}empty{% endif %}">
+                        <select name="day_{{ day }}_{{ s }}_1">
+                          <option value="">-- 1人目 --</option>
+                          {% for e in employees %}
+                            <option value="{{ e }}" {% if slots[0]==e %}selected{% endif %}>{{ e }}</option>
+                          {% endfor %}
+                        </select>
+                        <select name="day_{{ day }}_{{ s }}_2">
+                          <option value="">-- 2人目 --</option>
+                          {% for e in employees %}
+                            <option value="{{ e }}" {% if slots[1]==e %}selected{% endif %}>{{ e }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    {% else %}
+                      <div class="assigned-names">
+                        {% set a = slots[0] %}
+                        {% set b = slots[1] %}
+                        {% if a %}<span class="assigned">{{ a }}</span>{% else %}<span class="unassigned">未</span>{% endif %}
+                        {% if b %}<span class="assigned">{{ b }}</span>{% else %}<span class="unassigned">未</span>{% endif %}
+                      </div>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% if is_admin %}
+        <div class="actions">
+          <button class="primary" type="submit">保存</button>
+        </div>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

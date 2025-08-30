@@ -1,0 +1,13 @@
+{
+  "employees": [
+    "店長",
+    "マネージャー"
+  ],
+  "required_per_shift": {
+    "early": 2,
+    "morning": 2,
+    "afternoon": 2,
+    "evening": 2,
+    "night": 1
+  }
+}

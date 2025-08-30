@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>管理者ログイン</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: url("/static/background.png") no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-box {
+      background: #fff;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      width: 320px;
+      text-align: center;
+    }
+    h1 { margin-bottom: 20px; font-size: 20px; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #3b82f6;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover { background: #2563eb; }
+    .error { color: red; margin-top: 10px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h1>管理者ログイン</h1>
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post">
+      <input type="text" name="username" placeholder="ユーザー名" required>
+      <input type="password" name="password" placeholder="パスワード" required>
+      <button type="submit">ログイン</button>
+    </form>
+  </div>
+</body>
+</html>
+

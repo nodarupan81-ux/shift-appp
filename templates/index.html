@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ store_name }} - {{ year }}年 {{ month }}月 シフト表</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Arial, sans-serif; margin: 24px; }
+    .header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .title { font-size: 1.25rem; font-weight: 700; }
+    .nav { display: flex; gap: 8px; }
+    .btn {
+      display: inline-block; padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; text-decoration: none; color: #222;
+      background: #f7f7f7;
+    }
+    .btn:hover { background: #eee; }
+    table { border-collapse: collapse; width: 100%; max-width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; white-space: nowrap; }
+    th { background: #fafafa; }
+    .name { text-align: left; white-space: normal; }
+    .subtle { color: #666; font-weight: 500; }
+    .grid { overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">
+      {{ store_name }} <span class="subtle">- {{ year }}年 {{ month }}月 シフト表</span>
+    </div>
+    <div class="nav">
+      <a class="btn" href="{{ url_for('prev_month', year=year, month=month) }}">&laquo; 前月</a>
+      <a class="btn" href="{{ url_for('index') }}">今月へ</a>
+      <a class="btn" href="{{ url_for('next_month', year=year, month=month) }}">翌月 &raquo;</a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <table>
+      <thead>
+        <tr>
+          <th>名前</th>
+          {# まずは 1〜7日を例示。後で1ヶ月分(28〜31日)へ拡張しやすい作りに。 #}
+          {% for d in days %}
+            <th>{{ month }}/{{ d }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in shifts %}
+          <tr>
+            <td class="name">{{ row.name }}</td>
+            {% for d in days %}
+              <td>{{ row["d" ~ d] }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>

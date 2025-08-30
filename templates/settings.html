@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ store_name }} - 名簿・定員の設定</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="header">
+    <div class="container header-inner">
+      <h1 class="title">{{ store_name }} - 名簿・定員の設定</h1>
+      <div></div>
+      <div class="nav">
+        <a href="{{ url_for('schedule', store_id=store_id) }}">シフト編集</a> |
+        <a href="{{ url_for('view', store_id=store_id) }}">従業員用（閲覧）</a> |
+        <a href="{{ url_for('logout') }}">ログアウト</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <form method="post" class="panel">
+      <h2>従業員リスト</h2>
+      <p>1行につき1名で入力してください（例：山田太郎）</p>
+      <textarea class="employees" name="employees" placeholder="例：&#10;山田太郎&#10;佐藤花子">{{ employees_text }}</textarea>
+      <div style="margin-top:10px">
+        <button class="primary" type="submit">保存</button>
+      </div>
+    </form>
+
+    <form method="post" class="panel">
+      <h2>各シフトの定員</h2>
+      <table class="table">
+        <thead>
+          <tr><th>シフト</th><th>定員</th><th>説明</th></tr>
+        </thead>
+        <tbody>
+          {% for s in shifts %}
+          <tr>
+            <td>{{ labels[s] }}</td>
+            <td>
+              <select name="req_{{ s }}" class="req">
+                {% for n in range(0,6) %}
+                  <option value="{{ n }}" {% if required[s] == n %}selected{% endif %}>{{ n }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>{{ labels[s] }}の必要人数（0〜5）</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div style="margin-top:10px">
+        <button class="primary" type="submit">保存</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

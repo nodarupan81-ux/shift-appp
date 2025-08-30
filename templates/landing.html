@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>店舗選択</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .store-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:20px;}
+    .card{background:rgba(255,255,255,.9);border:1px solid #e5e7eb;border-radius:12px;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.04);}
+    .card h2{margin:0 0 10px;}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;}
+    .btn{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #2563eb;background:#3b82f6;color:#fff;text-decoration:none;font-weight:700;}
+    .btn.secondary{background:#fff;color:#2563eb;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>店舗を選択してください</h1>
+    <div class="store-grid">
+      {% for sid, sname in stores.items() %}
+      <div class="card">
+        <h2>{{ sname }}</h2>
+        <div class="btns">
+          <a class="btn secondary" href="{{ url_for('view', store_id=sid) }}">従業員用（閲覧）</a>
+          <a class="btn" href="{{ url_for('login_admin', store_id=sid, next=url_for('schedule', store_id=sid)) }}">管理者ログイン</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>
