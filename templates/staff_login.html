@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ store_name }} | 従業員ログイン</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .login-card{
+      max-width:420px;margin:48px auto;background:rgba(255,255,255,.95);
+      border:1px solid #e5e7eb;border-radius:12px;padding:20px;
+      box-shadow:0 2px 8px rgba(0,0,0,.06);
+    }
+    .login-card h2{margin:0 0 12px;font-size:18px}
+    .login-card p{margin:0 0 10px;color:#555}
+    .login-card input[type="password"]{
+      width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px
+    }
+    .login-card .error{color:#b91c1c;background:#fee2e2;border:1px solid #fecaca;padding:8px 10px;border-radius:8px;margin-bottom:10px}
+    .login-card .actions{margin-top:10px;text-align:right}
+    .btn{padding:10px 14px;border-radius:10px;border:1px solid #2563eb;background:#3b82f6;color:#fff;font-weight:700;cursor:pointer}
+    .btn:hover{background:#2563eb}
+    .small{font-size:12px;color:#6b7280;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h2>従業員ログイン</h2>
+    <p>{{ store_name }} のシフト閲覧にはパスワードが必要です。</p>
+
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('staff_login', store_id=store_id, next=request.args.get('next')) }}">
+      <input type="password" name="password" placeholder="閲覧用パスワード" required>
+      <div class="actions">
+        <button class="btn" type="submit">ログイン</button>
+      </div>
+    </form>
+
+    <div class="small">
+      店舗トップへ戻る：
+      <a href="{{ url_for('landing') }}">店舗選択</a>
+    </div>
+  </div>
+</body>
+</html>

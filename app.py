@@ -1,25 +1,24 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, abort
 import os, json, calendar
 import datetime as dt
 from pathlib import Path
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "CHANGE_ME_TO_A_RANDOM_STRING")
 
-# ----------------------------
-# 複数店舗 定義
-# ----------------------------
+# ===== セキュリティ（必ず設定） =====
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "CHANGE_ME_FOR_PRODUCTION")
+
+# ===== 共通パスワード（従業員閲覧用） =====
+STAFF_PASSWORD = os.environ.get("STAFF_PASSWORD", "")  # 例: "staff123"（Renderの環境変数で設定）
+
+# ===== 店舗定義 =====
 STORES = {
-    "wakaba2": "若葉2丁目店",
-    "akitsu":  "秋津新町店",
+    "wakaba2": {"name": "若葉2丁目店"},
+    "akitsu":  {"name": "秋津新町店"},
 }
 
-# 管理者ログイン（共通ユーザー/パスの例）
-ADMIN_USER = "365836"
-ADMIN_PASSWORD = "admin"
-
-# シフト定義
-SHIFTS = ["early", "morning", "afternoon", "evening", "night"]  # 早朝/午前/午後/夕方/深夜
+# ===== シフト種別 =====
+SHIFTS = ["early", "morning", "afternoon", "evening", "night"]
 SHIFTS_LABELS = {
     "early": "早朝",
     "morning": "午前",
@@ -29,48 +28,41 @@ SHIFTS_LABELS = {
 }
 WEEKDAYS_JP = ["日", "月", "火", "水", "木", "金", "土"]
 
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"  # 店舗ごとに data/<store_id>/ 以下に保存
+# ===== データ保存場所 =====
+DATA_DIR = Path("data")
 
-# ----------------------------
-# 共通ユーティリティ
-# ----------------------------
-def store_root(store_id: str) -> Path:
-    root = DATA_DIR / store_id
-    root.mkdir(parents=True, exist_ok=True)
-    return root
+def data_paths(store_id: str):
+    """店舗ごとの保存先（名簿/シフト）"""
+    base = DATA_DIR / store_id
+    base.mkdir(parents=True, exist_ok=True)
+    emp_json = base / "employees.json"
+    return base, emp_json
 
-def employees_path(store_id: str) -> Path:
-    return store_root(store_id) / "employees.json"
+def is_valid_store(store_id: str) -> bool:
+    return store_id in STORES
 
-def month_path(store_id: str, year: int, month: int) -> Path:
-    return store_root(store_id) / f"{year:04d}-{month:02d}.json"
-
-def is_admin(store_id: str) -> bool:
-    return session.get("role") == "admin" and session.get("admin_store") == store_id
-
-def login_required_admin(store_id: str):
-    if not is_admin(store_id):
-        return redirect(url_for("login_admin", store_id=store_id, next=url_for("schedule", store_id=store_id)))
-
+# ---------- 名簿/定員 ----------
 def load_employees(store_id: str):
-    """名簿と定員"""
+    _, emp_path = data_paths(store_id)
+
     def default_employees():
         return {
             "employees": ["店長", "マネージャー", "Aさん", "Bさん", "Cさん"],
-            "required_per_shift": {s: (1 if s == "night" else 2) for s in SHIFTS},
+            "required_per_shift": {
+                s: (1 if s == "night" else 2) for s in SHIFTS
+            },
         }
 
-    p = employees_path(store_id)
-    if p.exists():
+    if emp_path.exists():
         try:
-            data = json.loads(p.read_text(encoding="utf-8"))
+            with emp_path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
         except Exception:
             data = default_employees()
     else:
         data = default_employees()
 
-    # 形式の安全化
+    # 安全化
     if "employees" not in data or not isinstance(data["employees"], list):
         data["employees"] = []
     if "required_per_shift" not in data or not isinstance(data["required_per_shift"], dict):
@@ -81,7 +73,7 @@ def load_employees(store_id: str):
     # 名簿クレンジング
     cleaned, seen = [], set()
     for name in data["employees"]:
-        if not isinstance(name, str): 
+        if not isinstance(name, str):
             continue
         n = name.strip()
         if n and n not in seen:
@@ -91,19 +83,27 @@ def load_employees(store_id: str):
     return data
 
 def save_employees(store_id: str, data: dict):
-    p = employees_path(store_id)
-    p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    _, emp_path = data_paths(store_id)
+    with emp_path.open("w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+# ---------- 月別シフト ----------
+def month_path(store_id: str, year: int, month: int) -> Path:
+    base, _ = data_paths(store_id)
+    return base / f"{year:04d}-{month:02d}.json"
 
 def load_month(store_id: str, year: int, month: int):
     p = month_path(store_id, year, month)
     if p.exists():
-        return json.loads(p.read_text(encoding="utf-8"))
+        with p.open("r", encoding="utf-8") as f:
+            return json.load(f)
     last_day = calendar.monthrange(year, month)[1]
     return {str(d): {s: "" for s in SHIFTS} for d in range(1, last_day + 1)}
 
 def save_month(store_id: str, year: int, month: int, data: dict):
     p = month_path(store_id, year, month)
-    p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    with p.open("w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 def make_calendar(year: int, month: int):
     cal = calendar.Calendar(firstweekday=6)  # 日曜はじまり
@@ -113,7 +113,6 @@ def make_calendar(year: int, month: int):
     return weeks, prev_year, prev_month, next_year, next_month
 
 def make_prefill(data):
-    """保存形式(カンマ文字列)→2枠リストの表示用に整形"""
     prefill = {}
     for d_str, shifts in data.items():
         try:
@@ -132,138 +131,55 @@ def make_prefill(data):
             prefill[d][s] = [a, b]
     return prefill
 
-# ----------------------------
-# ルーティング
-# ----------------------------
+# ===== ランディング =====
 @app.route("/")
 def landing():
-    """店舗選択ページ"""
+    # 店舗一覧から選ぶ
     return render_template("landing.html", stores=STORES)
 
-# --- 管理者ログイン ---
-@app.route("/<store_id>/login-admin", methods=["GET", "POST"])
-def login_admin(store_id):
-    if store_id not in STORES:
-        return redirect(url_for("landing"))
+# ===== 従業員ログイン（共通パスワード方式） =====
+@app.route("/<store_id>/staff-login", methods=["GET", "POST"])
+def staff_login(store_id):
+    if not is_valid_store(store_id):
+        abort(404)
+
+    error = None
     if request.method == "POST":
-        user = request.form.get("username", "").strip()
         pw = request.form.get("password", "")
-        if user == ADMIN_USER and pw == ADMIN_PASSWORD:
+        if not STAFF_PASSWORD:
+            # パスワード未設定なら常に拒否（運用ミス防止）
+            error = "現在このサイトは一時的に閲覧停止中です（パスワード未設定）。管理者にご連絡ください。"
+        elif pw == STAFF_PASSWORD:
             session.clear()
-            session["role"] = "admin"
-            session["admin_store"] = store_id
-            next_url = request.args.get("next") or url_for("schedule", store_id=store_id)
+            session["role"] = "viewer"
+            session["store_id"] = store_id
+            next_url = request.args.get("next") or url_for("view", store_id=store_id)
             return redirect(next_url)
-        return render_template("login_admin.html", store_id=store_id, store_name=STORES[store_id],
-                               error="ユーザー名またはパスワードが違います。")
-    return render_template("login_admin.html", store_id=store_id, store_name=STORES[store_id])
+        else:
+            error = "パスワードが違います。"
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("landing"))
+    return render_template("staff_login.html",
+                           store_id=store_id,
+                           store_name=STORES[store_id]["name"],
+                           error=error)
 
-# --- 設定（名簿・定員） 管理者のみ ---
-@app.route("/<store_id>/settings", methods=["GET", "POST"])
-def settings(store_id):
-    if store_id not in STORES:
-        return redirect(url_for("landing"))
-    need = login_required_admin(store_id)
-    if need:
-        return need
+def viewer_required(store_id):
+    # パスワードが設定されている場合のみ閲覧にログインを要求
+    if STAFF_PASSWORD:
+        if session.get("role") != "viewer" or session.get("store_id") != store_id:
+            return redirect(url_for("staff_login", store_id=store_id, next=request.path))
+    return None
 
-    emp = load_employees(store_id)
-
-    if request.method == "POST":
-        # 名簿
-        raw = request.form.get("employees", "")
-        employees, seen = [], set()
-        for line in raw.splitlines():
-            name = line.strip()
-            if name and name not in seen:
-                employees.append(name)
-                seen.add(name)
-        # 定員
-        req = {}
-        for s in SHIFTS:
-            try:
-                val = int(request.form.get(f"req_{s}", "2"))
-                val = max(0, min(10, val))
-            except ValueError:
-                val = 2
-            req[s] = val
-
-        emp = {"employees": employees, "required_per_shift": req}
-        save_employees(store_id, emp)
-        return redirect(url_for("settings", store_id=store_id))
-
-    employees_text = "\n".join(emp["employees"])
-    return render_template(
-        "settings.html",
-        store_id=store_id,
-        store_name=STORES[store_id],
-        shifts=SHIFTS, labels=SHIFTS_LABELS,
-        employees_text=employees_text,
-        required=emp["required_per_shift"]
-    )
-
-# --- 管理者用：シフト編集 ---
-@app.route("/<store_id>/schedule", methods=["GET", "POST"])
-def schedule(store_id):
-    if store_id not in STORES:
-        return redirect(url_for("landing"))
-    need = login_required_admin(store_id)
-    if need:
-        return need
-
-    today = dt.date.today()
-    year = int(request.values.get("year", today.year))
-    month = int(request.values.get("month", today.month))
-
-    data = load_month(store_id, year, month)
-    emp = load_employees(store_id)
-
-    # 保存
-    if request.method == "POST":
-        for key in list(request.form.keys()):
-            if key.startswith("day_") and key.endswith("_1"):
-                # day_5_morning_1 → d_str=5, s=morning
-                _, d_str, s, _ = key.split("_", 3)
-                if d_str in data and s in SHIFTS:
-                    n1 = request.form.get(f"day_{d_str}_{s}_1", "").strip()
-                    n2 = request.form.get(f"day_{d_str}_{s}_2", "").strip()
-                    data[d_str][s] = ", ".join([x for x in (n1, n2) if x])
-        save_month(store_id, year, month, data)
-        return redirect(url_for("schedule", store_id=store_id, year=year, month=month))
-
-    # 画面用
-    prefill = make_prefill(data)
-    weeks, prev_year, prev_month, next_year, next_month = make_calendar(year, month)
-    year_options = list(range(today.year - 1, today.year + 2))
-    month_options = list(range(1, 13))
-
-    return render_template(
-        "schedule.html",
-        store_id=store_id,
-        store_name=STORES[store_id],
-        is_admin=True,
-        year=year, month=month, weeks=weeks,
-        prev_year=prev_year, prev_month=prev_month,
-        next_year=next_year, next_month=next_month,
-        year_options=year_options, month_options=month_options,
-        shifts=SHIFTS, shifts_labels=SHIFTS_LABELS,
-        weekdays=WEEKDAYS_JP,
-        prefill=prefill,
-        employees=emp["employees"],
-        required=emp["required_per_shift"],
-        now={"year": today.year, "month": today.month},
-    )
-
-# --- 従業員閲覧 ---
+# ===== 閲覧（従業員） =====
 @app.route("/<store_id>/view")
 def view(store_id):
-    if store_id not in STORES:
-        return redirect(url_for("landing"))
+    if not is_valid_store(store_id):
+        abort(404)
+
+    # ログイン必須にする（共通パスワード設定時）
+    need = viewer_required(store_id)
+    if need:
+        return need
 
     today = dt.date.today()
     year = int(request.args.get("year", today.year))
@@ -280,8 +196,7 @@ def view(store_id):
     return render_template(
         "schedule.html",
         store_id=store_id,
-        store_name=STORES[store_id],
-        is_admin=False,
+        store_name=STORES[store_id]["name"],
         year=year, month=month, weeks=weeks,
         prev_year=prev_year, prev_month=prev_month,
         next_year=next_year, next_month=next_month,
@@ -291,11 +206,19 @@ def view(store_id):
         prefill=prefill,
         employees=emp["employees"],
         required=emp["required_per_shift"],
-        now={"year": today.year, "month": today.month},
+        is_admin=False,
+        dt=dt,
     )
 
-if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+# ===== 管理者ログイン/編集は省略（既存のままでもOK） =====
+# 例）/wakaba2/schedule, /wakaba2/settings 等の管理系ルートは
+# これまでお渡ししたものをそのままお使いください。
 
+# ===== ルーティング確認 =====
+@app.route("/routes")
+def routes():
+    rules = sorted(str(r) for r in app.url_map.iter_rules())
+    return "<pre>" + "\n".join(rules) + "</pre>"
+
+if __name__ == "__main__":
+    app.run(debug=True)
