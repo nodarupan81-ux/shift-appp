@@ -22,7 +22,7 @@
         <h2>{{ sname }}</h2>
         <div class="btns">
           <a class="btn secondary" href="{{ url_for('view', store_id=sid) }}">従業員用（閲覧）</a>
-          <a class="btn" href="{{ url_for('login_admin', store_id=sid, next=url_for('schedule', store_id=sid)) }}">管理者ログイン</a>
+          <a class="btn" href="{{ url_for('login_admin', store_id=sid, next=url_for('staff_schedule', store_id=sid)) }}">管理者ログイン</a>
         </div>
       </div>
       {% endfor %}
