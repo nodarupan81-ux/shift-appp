@@ -2,27 +2,43 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>店舗選択</title>
+  <title>店舗選択 - シフト表</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .store-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:20px;}
-    .card{background:rgba(255,255,255,.9);border:1px solid #e5e7eb;border-radius:12px;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.04);}
-    .card h2{margin:0 0 10px;}
-    .btns{display:flex;gap:10px;flex-wrap:wrap;}
-    .btn{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #2563eb;background:#3b82f6;color:#fff;text-decoration:none;font-weight:700;}
-    .btn.secondary{background:#fff;color:#2563eb;}
+    .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 6px 14px rgba(0,0,0,.06); }
+    .card h2 { margin: 0 0 8px; }
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      display: inline-block; padding: 10px 14px; border-radius: 8px;
+      background: #2563eb; color: #fff; text-decoration: none;
+    }
+    .btn.secondary { background: #64748b; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>店舗を選択してください</h1>
-    <div class="store-grid">
+    <h1>店舗を選んでください</h1>
+
+    <div class="cards">
       {% for sid, sname in stores.items() %}
       <div class="card">
         <h2>{{ sname }}</h2>
         <div class="btns">
-          <a class="btn secondary" href="{{ url_for('view', store_id=sid) }}">従業員用（閲覧）</a>
-          <a class="btn" href="{{ url_for('login_admin', store_id=sid, next=url_for('staff_schedule', store_id=sid)) }}">管理者ログイン</a>
+          <!-- 従業員ログイン（共通パスワード）→ ログイン後は閲覧ページへ -->
+          <a class="btn" href="{{ url_for('staff_login', store_id=sid, next=url_for('view', store_id=sid)) }}">従業員ログイン</a>
+
+          <!-- そのまま閲覧に行こうとすると、未ログインなら staff-login にリダイレクトされる -->
+          <a class="btn secondary" href="{{ url_for('view', store_id=sid) }}">閲覧だけ</a>
+
+          <!-- 管理者ログイン（成功後、閲覧か編集に戻す。ここでは閲覧へ） -->
+          <a class="btn" href="{{ url_for('login_admin', store_id=sid, next=url_for('view', store_id=sid)) }}">管理者ログイン</a>
+
+          <!-- 管理者の編集画面（未ログインなら管理者ログインへ） -->
+          <a class="btn secondary" href="{{ url_for('schedule', store_id=sid) }}">シフト編集</a>
+
+          <!-- 名簿・定員（未ログインなら管理者ログインへ） -->
+          <a class="btn secondary" href="{{ url_for('settings', store_id=sid) }}">名簿・定員</a>
         </div>
       </div>
       {% endfor %}
