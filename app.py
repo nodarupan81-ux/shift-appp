@@ -105,10 +105,16 @@ def is_staff_authed(store_id: str) -> bool:
 
 # ====== 画面共通のマスタ（schedule.htmlが使う前提に合わせる） ======
 WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
-SHIFTS = ["am", "pm"]  # 例：午前/午後 の2枠
+# 5シフト定義（内部キー）
+SHIFTS = ["socho", "gozen", "gogo", "yugata", "shinya"]
+
+# 画面に出す日本語ラベル
 SHIFTS_LABELS = {
-    "am": "早番",
-    "pm": "遅番",
+    "socho":  "早朝",
+    "gozen":  "午前",
+    "gogo":   "午後",
+    "yugata": "夕方",
+    "shinya": "深夜",
 }
 
 
