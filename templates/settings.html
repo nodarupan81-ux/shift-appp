@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <title>{{ store_name }} - 名簿・定員の設定</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
+  <!-- ヘッダー -->
   <div class="header">
     <div class="container header-inner">
       <h1 class="title">{{ store_name }} - 名簿・定員の設定</h1>
@@ -19,7 +21,10 @@
   </div>
 
   <div class="container">
+
+    <!-- 従業員リスト -->
     <form method="post" class="panel">
+      <input type="hidden" name="action" value="save_employees">
       <h2>従業員リスト</h2>
       <p>1行につき1名で入力してください（例：山田太郎）</p>
       <textarea class="employees" name="employees" placeholder="例：&#10;山田太郎&#10;佐藤花子">{{ employees_text }}</textarea>
@@ -28,14 +33,16 @@
       </div>
     </form>
 
+    <!-- 各シフトの定員 -->
     <form method="post" class="panel">
+      <input type="hidden" name="action" value="save_requirements">
       <h2>各シフトの定員</h2>
       <table class="table">
         <thead>
           <tr><th>シフト</th><th>定員</th><th>説明</th></tr>
         </thead>
         <tbody>
-          {% for s in shifts %}
+        {% for s in shifts %}
           <tr>
             <td>{{ labels[s] }}</td>
             <td>
@@ -47,13 +54,14 @@
             </td>
             <td>{{ labels[s] }}の必要人数（0〜5）</td>
           </tr>
-          {% endfor %}
+        {% endfor %}
         </tbody>
       </table>
       <div style="margin-top:10px">
         <button class="primary" type="submit">保存</button>
       </div>
     </form>
+
   </div>
 </body>
 </html>
