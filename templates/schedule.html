@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>{{ store_name }} - {{ year }}年{{ month }}月 シフト表</title>
+  <title>{{ title or (store_name ~ ' - ' ~ year ~ '年' ~ month ~ '月 シフト表') }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -35,13 +35,13 @@
   </div>
 
   <div class="container">
-
     <div class="actions">
       {% if is_admin %}
         <a href="{{ url_for('settings', store_id=store_id) }}">⚙ 名簿・定員設定</a> |
         <a href="{{ url_for('logout') }}">ログアウト</a>
       {% else %}
-        <a href="{{ url_for('login_admin', store_id=store_id, next=url_for('schedule', store_id=store_id, year=year, month=month)) }}">管理者ログイン</a>
+        <a href="{{ url_for('login_admin', store_id=store_id, next=url_for('schedule', store_id=store_id, year=year, month=month)) }}">管理者ログイン</a> |
+        <a href="{{ url_for('staff_logout', store_id=store_id) }}">スタッフログアウト</a>
       {% endif %}
     </div>
 
@@ -70,36 +70,56 @@
             {% for day in week %}
             <td class="cell">
               {% if day != 0 %}
+                {% set day_key = day|string %}
                 <div class="day">
                   <div class="daynum">{{ day }}日</div>
                 </div>
 
                 {% for s in shifts %}
-                  {% set slots = prefill.get(day, {}).get(s, ["", ""]) %}
+                  {% set slots = (prefill.get(day_key) or {}).get(s, ["", ""]) %}
+                  {% set val1 = slots[0] %}
+                  {% set val2 = slots[1] %}
+
                   <div class="shift">
                     <div class="shift-label">{{ shifts_labels[s] }}</div>
 
                     {% if is_admin %}
-                      <div class="inputs {% if not slots[0] and not slots[1] %}empty{% endif %}">
+                      <div class="inputs {% if not val1 and not val2 %}empty{% endif %}">
+                        <!-- 1人目 -->
                         <select name="day_{{ day }}_{{ s }}_1">
                           <option value="">-- 1人目 --</option>
+                          {# 名簿外でも保存値があれば一時的に表示 #}
+                          {% if val1 and (val1 not in employees) %}
+                            <option value="{{ val1 }}" selected>{{ val1 }}（名簿外）</option>
+                          {% endif %}
                           {% for e in employees %}
-                            <option value="{{ e }}" {% if slots[0]==e %}selected{% endif %}>{{ e }}</option>
+                            <option value="{{ e }}" {% if val1 == e %}selected{% endif %}>{{ e }}</option>
                           {% endfor %}
                         </select>
+
+                        <!-- 2人目 -->
                         <select name="day_{{ day }}_{{ s }}_2">
                           <option value="">-- 2人目 --</option>
+                          {% if val2 and (val2 not in employees) %}
+                            <option value="{{ val2 }}" selected>{{ val2 }}（名簿外）</option>
+                          {% endif %}
                           {% for e in employees %}
-                            <option value="{{ e }}" {% if slots[1]==e %}selected{% endif %}>{{ e }}</option>
+                            <option value="{{ e }}" {% if val2 == e %}selected{% endif %}>{{ e }}</option>
                           {% endfor %}
                         </select>
                       </div>
                     {% else %}
                       <div class="assigned-names">
-                        {% set a = slots[0] %}
-                        {% set b = slots[1] %}
-                        {% if a %}<span class="assigned">{{ a }}</span>{% else %}<span class="unassigned">未</span>{% endif %}
-                        {% if b %}<span class="assigned">{{ b }}</span>{% else %}<span class="unassigned">未</span>{% endif %}
+                        {% if val1 %}
+                          <span class="assigned">{{ val1 }}</span>
+                        {% else %}
+                          <span class="unassigned">未</span>
+                        {% endif %}
+                        {% if val2 %}
+                          <span class="assigned">{{ val2 }}</span>
+                        {% else %}
+                          <span class="unassigned">未</span>
+                        {% endif %}
                       </div>
                     {% endif %}
                   </div>
@@ -120,5 +140,9 @@
       {% endif %}
     </div>
   </div>
+
+  {% if dt is not defined %}
+    {% set dt = namespace(utcnow='') %}
+  {% endif %}
 </body>
 </html>
