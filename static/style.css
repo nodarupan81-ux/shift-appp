@@ -1,257 +1,68 @@
-/* ====== 共通 ====== */
 body {
+  font-family: Arial, sans-serif;
+  background: #f8f8f8 url("background.png") repeat;
   margin: 0;
-  font-family: system-ui, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-  color: #222;
-  background: url("/static/background.png") no-repeat center center fixed;
-  background-size: cover;
+  padding: 0;
 }
 
 .container {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 12px 16px;
+  width: 95%;
+  margin: auto;
 }
 
 .header {
-  backdrop-filter: blur(3px);
-  background: rgba(255, 255, 255, .75);
-  border-bottom: 1px solid #e5e7eb;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  background: #004080;
+  color: white;
+  padding: 10px;
 }
 
-.header-inner {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 10px;
-  align-items: center;
-}
-
-.title {
+.header .title {
   margin: 0;
-  font-size: 18px;
-  font-weight: 700;
 }
 
 .nav a {
-  margin-right: 10px;
-  color: #2563eb;
+  color: white;
+  margin-left: 10px;
   text-decoration: none;
 }
 
-.nav a:hover {
-  text-decoration: underline;
+.calendar-nav {
+  margin: 15px 0;
+  text-align: center;
 }
 
-.ym-form {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.ym-form select,
-.ym-form button {
-  padding: 6px 10px;
-  font-size: 14px;
-}
-
-.account {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.actions {
-  text-align: right;
-  padding: 10px 0;
-}
-
-button.primary {
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid #2563eb;
-  background: #3b82f6;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-button.primary:hover {
-  background: #2563eb;
-}
-
-/* ====== テーブル ====== */
-.table-wrap {
-  background: rgba(255, 255, 255, .92);
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  overflow-x: auto;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, .04);
+.calendar-nav a, .calendar-nav select, .calendar-nav button {
+  margin: 0 5px;
 }
 
 .shift-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1024px; /* ← 7列が収まりやすい幅に */
+  background: white;
 }
 
 .shift-table th,
 .shift-table td {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #ccc;
+  padding: 4px;
   vertical-align: top;
-  padding: 5px;
-}
-
-.shift-table th {
-  background: #f5f7fb;
-}
-
-.cell {
-  min-height: 110px;
-}
-
-.day {
   text-align: center;
-  font-weight: 600;
 }
 
-.wcol {
-  width: 54px;
+.week-label {
+  font-weight: bold;
+  background: #eef;
 }
 
-.daynum {
-  font-size: 16px;
-  font-weight: 700;
+.day-label {
+  font-weight: bold;
   margin-bottom: 4px;
 }
 
-.shift {
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  gap: 6px;
-  margin-bottom: 6px;
-  align-items: center;
-}
-
 .shift-label {
-  font-size: 12px;
-  color: #555;
-}
-
-.inputs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-
-.inputs select {
-  width: 100%;
-  padding: 5px 7px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 12px;
-  background: #fff;
-}
-
-.inputs select:focus {
-  outline: 2px solid #93c5fd;
-  border-color: #60a5fa;
-}
-
-/* 未選択ハイライト（管理者用） */
-.inputs.empty select {
-  background: #fff4cc;
-  border-color: #f0c53a;
-}
-
-/* ====== 閲覧用（従業員） ====== */
-.readonly {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.unassigned {
-  background-color: #ffe08a;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 0.9em;
-  margin: 2px;
-  white-space: nowrap;
-}
-
-.assigned-names {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-
-.assigned {
-  background-color: #f2f2f2;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 0.95em;
-  margin: 2px;
-  white-space: nowrap;
-}
-
-/* ====== 設定画面 ====== */
-.panel {
-  background: rgba(255, 255, 255, .9);
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 16px;
-  margin: 12px 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, .04);
-}
-
-.employees {
-  width: 100%;
-  min-height: 180px;
-  font: inherit;
-  padding: 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-}
-
-.table th,
-.table td {
-  border: 1px solid #e5e7eb;
-  padding: 10px;
-}
-
-.table th {
-  background: #f7f7fb;
-  text-align: left;
-}
-
-.req {
-  padding: 6px 8px;
-}
-
-/* ====== スマホ ====== */
-@media (max-width: 768px) {
-  .header-inner {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-  .container {
-    padding: 12px;
-  }
-  .shift {
-    grid-template-columns: 1fr;
-  }
-  .inputs {
-    grid-template-columns: 1fr;
-  }
-  .shift-table {
-    min-width: 720px;
-  }
+  font-weight: bold;
+  background: #f7f7f7;
+  margin-top: 4px;
+  padding: 2px;
+  border-bottom: 1px solid #ddd;
 }

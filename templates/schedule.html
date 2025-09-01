@@ -2,147 +2,97 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>{{ title or (store_name ~ ' - ' ~ year ~ '年' ~ month ~ '月 シフト表') }}</title>
+  <title>{{ store_name }} - {{ year }}年{{ month }}月 シフト表</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <div class="header">
     <div class="container header-inner">
       <h1 class="title">{{ store_name }} - {{ year }}年{{ month }}月 シフト表</h1>
-
       <div class="nav">
-        <a href="{{ url_for(is_admin and 'schedule' or 'view', store_id=store_id, year=prev_year, month=prev_month) }}">&laquo; 前の月</a>
-        <a href="{{ url_for(is_admin and 'schedule' or 'view', store_id=store_id, year=now.year, month=now.month) }}">今月へ</a>
-        <a href="{{ url_for(is_admin and 'schedule' or 'view', store_id=store_id, year=next_year, month=next_month) }}">次の月 &raquo;</a>
+        {% if is_admin %}
+          <a href="{{ url_for('settings', store_id=store_id) }}">名簿・定員</a> |
+        {% endif %}
+        <a href="{{ url_for('logout') }}">ログアウト</a>
       </div>
-
-      <form class="ym-form" action="{{ url_for(is_admin and 'schedule' or 'view', store_id=store_id) }}" method="get">
-        年
-        <select name="year">
-          {% for y in year_options %}
-            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
-          {% endfor %}
-        </select>
-        月
-        <select name="month">
-          {% for m in month_options %}
-            <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit">移動</button>
-      </form>
     </div>
   </div>
 
   <div class="container">
-    <div class="actions">
-      {% if is_admin %}
-        <a href="{{ url_for('settings', store_id=store_id) }}">⚙ 名簿・定員設定</a> |
-        <a href="{{ url_for('logout') }}">ログアウト</a>
-      {% else %}
-        <a href="{{ url_for('login_admin', store_id=store_id, next=url_for('schedule', store_id=store_id, year=year, month=month)) }}">管理者ログイン</a> |
-        <a href="{{ url_for('staff_logout', store_id=store_id) }}">スタッフログアウト</a>
-      {% endif %}
+    <div class="calendar-nav">
+      <a href="{{ url_for('schedule' if is_admin else 'view', store_id=store_id, year=prev_year, month=prev_month) }}">« 前の月</a>
+      <a href="{{ url_for('schedule' if is_admin else 'view', store_id=store_id, year=now.year, month=now.month) }}">今月へ</a>
+      <a href="{{ url_for('schedule' if is_admin else 'view', store_id=store_id, year=next_year, month=next_month) }}">次の月 »</a>
+      <select onchange="location.href='?year='+this.value+'&month={{ month }}'">
+        {% for y in year_options %}
+          <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}年</option>
+        {% endfor %}
+      </select>
+      <select onchange="location.href='?year={{ year }}&month='+this.value">
+        {% for m in month_options %}
+          <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}月</option>
+        {% endfor %}
+      </select>
+      <button onclick="location.href='?year={{ year }}&month={{ month }}'">移動</button>
     </div>
 
-    <div class="table-wrap">
-      {% if is_admin %}
-      <form method="post" action="{{ url_for('schedule', store_id=store_id) }}">
-        <input type="hidden" name="year" value="{{ year }}">
-        <input type="hidden" name="month" value="{{ month }}">
-      {% endif %}
-
+    <form method="post">
       <table class="shift-table">
         <thead>
           <tr>
-            <th class="wcol">週</th>
+            <th>週</th>
             {% for wd in weekdays %}
               <th>{{ wd }}</th>
             {% endfor %}
           </tr>
         </thead>
-
         <tbody>
-          {% for week in weeks %}
+          {% for week_idx, week in enumerate(weeks, 1) %}
           <tr>
-            <th class="wcol">第{{ loop.index }}週</th>
-
+            <td class="week-label">第{{ week_idx }}週</td>
             {% for day in week %}
-            <td class="cell">
-              {% if day != 0 %}
-                {% set day_key = day|string %}
-                <div class="day">
-                  <div class="daynum">{{ day }}日</div>
-                </div>
-
-                {% for s in shifts %}
-                  {% set slots = (prefill.get(day_key) or {}).get(s, ["", ""]) %}
-                  {% set val1 = slots[0] %}
-                  {% set val2 = slots[1] %}
-
-                  <div class="shift">
+              <td>
+                {% if day == 0 %}
+                  <!-- 空セル -->
+                {% else %}
+                  <div class="day-label">{{ day }}日</div>
+                  {% for s in shifts %}
                     <div class="shift-label">{{ shifts_labels[s] }}</div>
-
                     {% if is_admin %}
-                      <div class="inputs {% if not val1 and not val2 %}empty{% endif %}">
-                        <!-- 1人目 -->
-                        <select name="day_{{ day }}_{{ s }}_1">
-                          <option value="">-- 1人目 --</option>
-                          {# 名簿外でも保存値があれば一時的に表示 #}
-                          {% if val1 and (val1 not in employees) %}
-                            <option value="{{ val1 }}" selected>{{ val1 }}（名簿外）</option>
-                          {% endif %}
-                          {% for e in employees %}
-                            <option value="{{ e }}" {% if val1 == e %}selected{% endif %}>{{ e }}</option>
-                          {% endfor %}
-                        </select>
-
-                        <!-- 2人目 -->
-                        <select name="day_{{ day }}_{{ s }}_2">
-                          <option value="">-- 2人目 --</option>
-                          {% if val2 and (val2 not in employees) %}
-                            <option value="{{ val2 }}" selected>{{ val2 }}（名簿外）</option>
-                          {% endif %}
-                          {% for e in employees %}
-                            <option value="{{ e }}" {% if val2 == e %}selected{% endif %}>{{ e }}</option>
-                          {% endfor %}
-                        </select>
-                      </div>
+                      <select name="day_{{ day }}_{{ s }}_1">
+                        <option value="">-</option>
+                        {% for emp in employees %}
+                          <option value="{{ emp }}" {% if prefill.get(day|string, {}).get(s, ["",""])[0] == emp %}selected{% endif %}>{{ emp }}</option>
+                        {% endfor %}
+                      </select>
+                      <select name="day_{{ day }}_{{ s }}_2">
+                        <option value="">-</option>
+                        {% for emp in employees %}
+                          <option value="{{ emp }}" {% if prefill.get(day|string, {}).get(s, ["",""])[1] == emp %}selected{% endif %}>{{ emp }}</option>
+                        {% endfor %}
+                      </select>
                     {% else %}
-                      <div class="assigned-names">
-                        {% if val1 %}
-                          <span class="assigned">{{ val1 }}</span>
-                        {% else %}
-                          <span class="unassigned">未</span>
-                        {% endif %}
-                        {% if val2 %}
-                          <span class="assigned">{{ val2 }}</span>
-                        {% else %}
-                          <span class="unassigned">未</span>
-                        {% endif %}
-                      </div>
+                      {% set assigned = prefill.get(day|string, {}).get(s, []) %}
+                      {% if assigned %}
+                        <div>{{ assigned|join(", ") }}</div>
+                      {% else %}
+                        <div>未</div>
+                      {% endif %}
                     {% endif %}
-                  </div>
-                {% endfor %}
-              {% endif %}
-            </td>
+                  {% endfor %}
+                {% endif %}
+              </td>
             {% endfor %}
           </tr>
           {% endfor %}
         </tbody>
       </table>
-
       {% if is_admin %}
-        <div class="actions">
+        <div style="margin-top:10px">
           <button class="primary" type="submit">保存</button>
         </div>
-      </form>
       {% endif %}
-    </div>
+    </form>
   </div>
-
-  {% if dt is not defined %}
-    {% set dt = namespace(utcnow='') %}
-  {% endif %}
 </body>
 </html>
