@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ store_name }} - {{ year }}年{{ month }}月 シフト編集</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=savebtn2">
+</head>
+<body>
+  <header class="page-header">
+    <h1>{{ store_name }} {{ year }}年{{ month }}月 シフト編集</h1>
+  </header>
+
+  <!-- フォーム開始：同じURLにPOST -->
+  <form method="post" action="">
+    <input type="hidden" name="store_id" value="{{ store_id }}">
+    <input type="hidden" name="year" value="{{ year }}">
+    <input type="hidden" name="month" value="{{ month }}">
+
+    <!-- 上部ツールバー（保存／戻る） -->
+    <div class="edit-toolbar">
+      <button type="submit" class="btn btn-primary">保存</button>
+      <a href="{{ url_for('index') }}" class="btn">戻る</a>
+    </div>
+
+    <div class="table-wrap" aria-label="シフト表 横スクロール領域">
+      <table class="shift-table" role="table" aria-label="シフト表">
+        <thead>
+          <tr>
+            <th class="sticky-left sticky-top week-col">週</th>
+            <th class="sticky-top">月</th>
+            <th class="sticky-top">火</th>
+            <th class="sticky-top">水</th>
+            <th class="sticky-top">木</th>
+            <th class="sticky-top">金</th>
+            <th class="sticky-top">土</th>
+            <th class="sticky-top">日</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for week, days in schedule.items() %}
+          <tr>
+            <th class="sticky-left week-col">{{ week }}</th>
+            {% for day, shifts in days.items() %}
+            <td>
+              <div class="day-head">{{ day }}日</div>
+
+              {% for slot in ["早朝","午前","午後","夕方","深夜"] %}
+              <div class="slot">
+                <span class="badge
+                  {% if slot=='早朝' %}dawn
+                  {% elif slot=='午前' %}am
+                  {% elif slot=='午後' %}pm
+                  {% elif slot=='夕方' %}eve
+                  {% else %}night{% endif %}">
+                  {{ slot }}
+                </span>
+
+                <select name="shifts[{{ week }}][{{ day }}][{{ slot }}]">
+                  <option value="">ー</option>
+                  {% for staff in staff_list %}
+                    <option value="{{ staff }}" {% if shifts.get(slot) == staff %}selected{% endif %}>
+                      {{ staff }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              {% endfor %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 下部ツールバー（保存ボタンもう一つ） -->
+    <div class="edit-toolbar sticky-footer">
+      <button type="submit" class="btn btn-primary">保存</button>
+    </div>
+  </form>
+
+  <footer class="page-footer">
+    <small>横にスワイプでスクロールできます</small>
+  </footer>
+</body>
+</html>
