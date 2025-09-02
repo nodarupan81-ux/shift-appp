@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import calendar
 import datetime as dt
@@ -8,41 +8,41 @@ from flask import (
     session, flash, abort
 )
 
-# ====== 蝓ｺ譛ｬ險ｭ螳・======
+# ====== 基本設定 ======
 app = Flask(__name__)
 
-# 繧ｻ繝・す繝ｧ繝ｳ骰ｵ・亥ｿ・茨ｼ・
+# セッション鍵（必須）
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-change-me")
 
-# 繝代せ繝ｯ繝ｼ繝会ｼ亥・騾壹ヱ繧ｹ繝ｯ繝ｼ繝画婿蠑擾ｼ・
-STAFF_PASSWORD = os.environ.get("STAFF_PASSWORD", "staffpass")   # 蠕捺･ｭ蜩｡逕ｨ
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "adminpass")   # 邂｡逅・・畑・域里蟄倥・邂｡逅・・Ο繧ｰ繧､繝ｳ・・
+# パスワード（共通パスワード方式）
+STAFF_PASSWORD = os.environ.get("STAFF_PASSWORD", "staffpass")   # 従業員用
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "adminpass")   # 管理者用（既存の管理者ログイン）
 
-# 蜿匁桶縺・ｺ苓・
+# 取扱い店舗
 STORES = {
-    "wakaba2": "闍･闡・荳∫岼蠎・,
-    "akitsu": "遘区ｴ･譁ｰ逕ｺ蠎・,
+    "wakaba2": "若葉2丁目店",
+    "akitsu": "秋津新町店",
 }
 
-# 繝・・繧ｿ繝・ぅ繝ｬ繧ｯ繝医Μ
+# データディレクトリ
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 
 
-# ====== 繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ ======
+# ====== ユーティリティ ======
 def store_exists(store_id: str) -> bool:
     return store_id in STORES
 
 def month_bounds(year: int, month: int):
-    """縺昴・譛医・1譌･縲懈忰譌･縺ｮ譌･莉倡ｯ・峇繧定ｿ斐☆"""
+    """その月の1日〜末日の日付範囲を返す"""
     first = dt.date(year, month, 1)
     last_day = calendar.monthrange(year, month)[1]
     last = dt.date(year, month, last_day)
     return first, last
 
 def build_calendar(year: int, month: int):
-    """陦ｨ遉ｺ逕ｨ縺ｫ騾ｱ縺斐→縺ｮ譌･莉倬・蛻暦ｼ・縺ｯ隧ｲ蠖薙↑縺暦ｼ峨ｒ菴懊ｋ"""
-    cal = calendar.Calendar(firstweekday=0)  # 譛域屆髢句ｧ九↑繧・0竊・繧定ｪｿ謨ｴ
+    """表示用に週ごとの日付配列（0は該当なし）を作る"""
+    cal = calendar.Calendar(firstweekday=0)  # 月曜開始なら 0→6を調整
     weeks = []
     month_days = cal.monthdayscalendar(year, month)
     for w in month_days:
@@ -99,25 +99,25 @@ def is_staff_authed(store_id: str) -> bool:
     return session.get(f"staff_authed_{store_id}", False)
 
 
-# ====== 逕ｻ髱｢蜈ｱ騾壹・繝槭せ繧ｿ ======
-WEEKDAYS = ["譛・, "轣ｫ", "豌ｴ", "譛ｨ", "驥・, "蝨・, "譌･"]
+# ====== 画面共通のマスタ ======
+WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
 SHIFTS = ["socho", "gozen", "gogo", "yugata", "shinya"]
 SHIFTS_LABELS = {
-    "socho":  "譌ｩ譛・,
-    "gozen":  "蜊亥燕",
-    "gogo":   "蜊亥ｾ・,
-    "yugata": "螟墓婿",
-    "shinya": "豺ｱ螟・,
+    "socho":  "早朝",
+    "gozen":  "午前",
+    "gogo":   "午後",
+    "yugata": "夕方",
+    "shinya": "深夜",
 }
 
 
-# ====== 繝ｩ繝ｳ繝・ぅ繝ｳ繧ｰ ======
+# ====== ランディング ======
 @app.route("/")
 def landing():
     return render_template("landing.html", stores=STORES)
 
 
-# ====== 蠕捺･ｭ蜩｡繝ｭ繧ｰ繧､繝ｳ ======
+# ====== 従業員ログイン ======
 @app.route("/<store_id>/staff-login", methods=["GET", "POST"])
 def staff_login(store_id):
     require_store_or_404(store_id)
@@ -127,7 +127,7 @@ def staff_login(store_id):
         if pwd == STAFF_PASSWORD:
             session[f"staff_authed_{store_id}"] = True
             return redirect(next_url)
-        flash("繝代せ繝ｯ繝ｼ繝峨′驕輔＞縺ｾ縺吶・, "error")
+        flash("パスワードが違います。", "error")
     next_url = request.args.get("next") or url_for("view", store_id=store_id)
     return render_template("staff_login.html", store_id=store_id, store_name=store_name(store_id), next_url=next_url)
 
@@ -136,11 +136,11 @@ def staff_login(store_id):
 def staff_logout(store_id):
     require_store_or_404(store_id)
     session.pop(f"staff_authed_{store_id}", None)
-    flash("繧ｹ繧ｿ繝・ヵ縺ｨ縺励※繝ｭ繧ｰ繧｢繧ｦ繝医＠縺ｾ縺励◆縲・, "info")
+    flash("スタッフとしてログアウトしました。", "info")
     return redirect(url_for("staff_login", store_id=store_id))
 
 
-# ====== 邂｡逅・・Ο繧ｰ繧､繝ｳ ======
+# ====== 管理者ログイン ======
 @app.route("/<store_id>/login-admin", methods=["GET", "POST"])
 def login_admin(store_id):
     require_store_or_404(store_id)
@@ -151,7 +151,7 @@ def login_admin(store_id):
             session[f"is_admin_{store_id}"] = True
             session[f"staff_authed_{store_id}"] = True
             return redirect(next_url)
-        flash("繝代せ繝ｯ繝ｼ繝峨′驕輔＞縺ｾ縺吶・, "error")
+        flash("パスワードが違います。", "error")
     next_url = request.args.get("next") or url_for("schedule", store_id=store_id)
     return render_template("login_admin.html", store_id=store_id, store_name=store_name(store_id), next_url=next_url)
 
@@ -161,11 +161,11 @@ def logout():
     for sid in STORES.keys():
         session.pop(f"is_admin_{sid}", None)
         session.pop(f"staff_authed_{sid}", None)
-    flash("繝ｭ繧ｰ繧｢繧ｦ繝医＠縺ｾ縺励◆縲・, "info")
+    flash("ログアウトしました。", "info")
     return redirect(url_for("landing"))
 
 
-# ====== 蠕捺･ｭ蜩｡髢ｲ隕ｧ ======
+# ====== 従業員閲覧 ======
 @app.route("/<store_id>/view")
 def view(store_id):
     require_store_or_404(store_id)
@@ -186,7 +186,7 @@ def view(store_id):
     month_options = list(range(1, 13))
 
     return render_template(
-        "schedule2.html",
+        "schedule.html",
         title=None,
         store_name=store_name(store_id),
         store_id=store_id,
@@ -210,7 +210,7 @@ def view(store_id):
     )
 
 
-# ====== 邂｡逅・・ｼ壹す繝輔ヨ邱ｨ髮・======
+# ====== 管理者：シフト編集 ======
 @app.route("/<store_id>/schedule", methods=["GET", "POST"])
 def schedule(store_id):
     require_store_or_404(store_id)
@@ -233,7 +233,7 @@ def schedule(store_id):
                 a2 = request.form.get(f"day_{day}_{s}_2", "")
                 data[day_key][s] = [a1, a2]
         save_schedule(store_id, year, month, data)
-        flash("菫晏ｭ倥＠縺ｾ縺励◆縲・, "success")
+        flash("保存しました。", "success")
         return redirect(url_for("schedule", store_id=store_id, year=year, month=month))
 
     year = int(request.args.get("year") or today.year)
@@ -246,7 +246,7 @@ def schedule(store_id):
     month_options = list(range(1, 13))
 
     return render_template(
-        "schedule2.html",
+        "schedule.html",
         title=None,
         store_name=store_name(store_id),
         store_id=store_id,
@@ -270,7 +270,7 @@ def schedule(store_id):
     )
 
 
-# ====== 邂｡逅・・ｼ壼錐邁ｿ繝ｻ螳壼藤 ======
+# ====== 管理者：名簿・定員 ======
 @app.route("/<store_id>/settings", methods=["GET", "POST"])
 def settings(store_id):
     require_store_or_404(store_id)
@@ -289,9 +289,9 @@ def settings(store_id):
                 target_path = DATA_DIR / store_id / "employees.json"
                 target_path.parent.mkdir(parents=True, exist_ok=True)
                 target_path.write_text(json.dumps(new_list, ensure_ascii=False, indent=2), encoding="utf-8")
-                flash("蜷咲ｰｿ繧呈峩譁ｰ縺励∪縺励◆縲・, "success")
+                flash("名簿を更新しました。", "success")
             else:
-                flash("蜈･蜉帙′遨ｺ縺ｮ縺溘ａ蜷咲ｰｿ縺ｯ螟画峩縺励∪縺帙ｓ縺ｧ縺励◆縲・, "info")
+                flash("入力が空のため名簿は変更しませんでした。", "info")
             return redirect(url_for("settings", store_id=store_id))
 
         return redirect(url_for("settings", store_id=store_id))
@@ -305,13 +305,13 @@ def settings(store_id):
     )
 
 
-# ====== 逶ｴ謗･URL縺ｧ /<store_id>/ 縺ｫ譚･縺溘ｉ髢ｲ隕ｧ縺ｸ ======
+# ====== 直接URLで /<store_id>/ に来たら閲覧へ ======
 @app.route("/<store_id>/")
 def go_store_root(store_id):
     require_store_or_404(store_id)
     return redirect(url_for("view", store_id=store_id))
 
 
-# ====== 繝ｭ繝ｼ繧ｫ繝ｫ襍ｷ蜍慕畑 ======
+# ====== ローカル起動用 ======
 if __name__ == "__main__":
     app.run(debug=True)
