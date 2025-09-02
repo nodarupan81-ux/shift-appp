@@ -1,47 +1,28 @@
 ﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>蠎苓・驕ｸ謚・- 繧ｷ繝輔ヨ陦ｨ</title>
+  <meta charset="utf-8" />
+  <title>店舗を選択してください</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-    .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-    .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 6px 14px rgba(0,0,0,.06); }
-    .card h2 { margin: 0 0 8px; }
-    .btns { display: flex; gap: 8px; flex-wrap: wrap; }
-    .btn {
-      display: inline-block; padding: 10px 14px; border-radius: 8px;
-      background: #2563eb; color: #fff; text-decoration: none;
-    }
-    .btn.secondary { background: #64748b; }
-  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>蠎苓・繧帝∈繧薙〒縺上□縺輔＞</h1>
+  <h1 class="page-title">全店舗メニュー</h1>
 
-    <div class="cards">
-      {% for sid, sname in stores.items() %}
-      <div class="card">
-        <h2>{{ sname }}</h2>
-        <div class="btns">
-          <!-- 蠕捺･ｭ蜩｡繝ｭ繧ｰ繧､繝ｳ・亥・騾壹ヱ繧ｹ繝ｯ繝ｼ繝会ｼ俄・ 繝ｭ繧ｰ繧､繝ｳ蠕後・髢ｲ隕ｧ繝壹・繧ｸ縺ｸ -->
-          <a class="btn" href="{{ url_for('staff_login', store_id=sid, next=url_for('view', store_id=sid)) }}">蠕捺･ｭ蜩｡繝ｭ繧ｰ繧､繝ｳ</a>
+  <div class="store-list">
+    <div class="store">
+      <h2>若葉2丁目店</h2>
+      <a href="{{ url_for('staff_login', store_id='wakaba2') }}" class="btn">スタッフログイン</a>
+      <a href="{{ url_for('schedule', store_id='wakaba2', year=dt.date.today().year, month=dt.date.today().month) }}" class="btn">閲覧（スタッフ）</a>
+      <a href="{{ url_for('settings', store_id='wakaba2') }}" class="btn">設定</a>
+      <a href="{{ url_for('logout') }}" class="btn">ログアウト</a>
+    </div>
 
-          <!-- 縺昴・縺ｾ縺ｾ髢ｲ隕ｧ縺ｫ陦後％縺・→縺吶ｋ縺ｨ縲∵悴繝ｭ繧ｰ繧､繝ｳ縺ｪ繧・staff-login 縺ｫ繝ｪ繝繧､繝ｬ繧ｯ繝医＆繧後ｋ -->
-          <a class="btn secondary" href="{{ url_for('view', store_id=sid) }}">髢ｲ隕ｧ縺縺・/a>
-
-          <!-- 邂｡逅・・Ο繧ｰ繧､繝ｳ・域・蜉溷ｾ後・夢隕ｧ縺狗ｷｨ髮・↓謌ｻ縺吶ゅ％縺薙〒縺ｯ髢ｲ隕ｧ縺ｸ・・-->
-          <a class="btn" href="{{ url_for('login_admin', store_id=sid, next=url_for('view', store_id=sid)) }}">邂｡逅・・Ο繧ｰ繧､繝ｳ</a>
-
-          <!-- 邂｡逅・・・邱ｨ髮・判髱｢・域悴繝ｭ繧ｰ繧､繝ｳ縺ｪ繧臥ｮ｡逅・・Ο繧ｰ繧､繝ｳ縺ｸ・・-->
-          <a class="btn secondary" href="{{ url_for('schedule', store_id=sid) }}">繧ｷ繝輔ヨ邱ｨ髮・/a>
-
-          <!-- 蜷咲ｰｿ繝ｻ螳壼藤・域悴繝ｭ繧ｰ繧､繝ｳ縺ｪ繧臥ｮ｡逅・・Ο繧ｰ繧､繝ｳ縺ｸ・・-->
-          <a class="btn secondary" href="{{ url_for('settings', store_id=sid) }}">蜷咲ｰｿ繝ｻ螳壼藤</a>
-        </div>
-      </div>
-      {% endfor %}
+    <div class="store">
+      <h2>秋津新町店</h2>
+      <a href="{{ url_for('staff_login', store_id='akitsu') }}" class="btn">スタッフログイン</a>
+      <a href="{{ url_for('schedule', store_id='akitsu', year=dt.date.today().year, month=dt.date.today().month) }}" class="btn">閲覧（スタッフ）</a>
+      <a href="{{ url_for('settings', store_id='akitsu') }}" class="btn">設定</a>
+      <a href="{{ url_for('logout') }}" class="btn">ログアウト</a>
     </div>
   </div>
 </body>
