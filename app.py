@@ -110,16 +110,27 @@ def landing():
 # ===== 従業員ログイン =====
 @app.route("/<store_id>/staff-login", methods=["GET", "POST"])
 def staff_login(store_id):
+    """スタッフ用ログイン。成功したら next (なければ /<store_id>/view) へ"""
     require_store_or_404(store_id)
+
+    next_url = request.values.get("next") or url_for("view", store_id=store_id)
+
     if request.method == "POST":
         pwd = request.form.get("password", "")
-        next_url = request.form.get("next") or url_for("view", store_id=store_id)
         if pwd == STAFF_PASSWORD:
             session[f"staff_authed_{store_id}"] = True
             return redirect(next_url)
         flash("パスワードが違います。", "error")
-    next_url = request.args.get("next") or url_for("view", store_id=store_id)
-    return render_template("staff_login.html", store_id=store_id, store_name=store_name(store_id), next_url=next_url)
+        # 入力値を保持したい場合は hidden で next を渡す
+        return redirect(url_for("staff_login", store_id=store_id, next=next_url))
+
+    # GET はログイン画面を出す（※ここで schedule.html を出していたのが不具合の原因）
+    return render_template(
+        "staff_login.html",
+        store_id=store_id,
+        store_name=store_name(store_id),
+        next_url=next_url,
+    )
 
 @app.route("/<store_id>/staff-logout")
 def staff_logout(store_id):
@@ -293,4 +304,5 @@ def go_store_root(store_id):
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
