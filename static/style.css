@@ -1,4 +1,6 @@
-/* ベース */
+/* ==============================
+   基本スタイル
+============================== */
 :root {
   --border: #dfe3e8;
   --bg: #ffffff;
@@ -15,10 +17,13 @@ html, body {
   margin: 0;
   color: var(--text);
   background: #f6f7f8;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Meiryo", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Meiryo", sans-serif;
 }
 
-/* ページヘッダ/フッタ */
+/* ==============================
+   ヘッダー・フッター
+============================== */
 .page-header, .page-footer {
   padding: 10px 12px;
 }
@@ -27,14 +32,15 @@ html, body {
   font-size: clamp(16px, 4vw, 20px);
 }
 
-/* 横スクロール領域 */
+/* ==============================
+   横スクロールテーブル
+============================== */
 .table-wrap {
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch; /* iOSでヌルスクロール */
+  -webkit-overflow-scrolling: touch; /* iOSで滑らかスクロール */
   padding: 8px 12px 16px;
 }
 
-/* テーブルの見た目 */
 .shift-table {
   width: 100%;
   border-collapse: separate;
@@ -42,20 +48,14 @@ html, body {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  /* スマホで潰れないように最小幅を確保（列幅は後述のth,tdで固定） */
   min-width: 720px;
   table-layout: fixed;
 }
 
-/* 上部ボーダーを角丸に合わせる */
-.shift-table thead th:first-child {
-  border-top-left-radius: var(--radius);
-}
-.shift-table thead th:last-child {
-  border-top-right-radius: var(--radius);
-}
+/* 角丸 */
+.shift-table thead th:first-child { border-top-left-radius: var(--radius); }
+.shift-table thead th:last-child  { border-top-right-radius: var(--radius); }
 
-/* セル共通 */
 .shift-table th,
 .shift-table td {
   border-right: 1px solid var(--border);
@@ -70,17 +70,15 @@ html, body {
   white-space: nowrap;
 }
 
-/* 列幅（モバイルで見やすいよう少し広め） */
 .shift-table th:not(.week-col),
 .shift-table td { width: 120px; }
 .shift-table .week-col { width: 84px; min-width: 84px; }
 
-/* 偶数行の背景 */
 .shift-table tbody tr:nth-child(even) td {
   background: var(--bg-alt);
 }
 
-/* sticky（上・左を固定） */
+/* sticky */
 .sticky-top {
   position: sticky;
   top: 0;
@@ -95,7 +93,9 @@ html, body {
   box-shadow: 1px 0 0 var(--border);
 }
 
-/* 日付ヘッダとバッジ */
+/* ==============================
+   日付・スロット
+============================== */
 .day-head {
   font-weight: 600;
   margin-bottom: 6px;
@@ -111,7 +111,7 @@ html, body {
   margin-left: 4px;
 }
 
-.slot { 
+.slot {
   text-align: left;
   display: block;
   padding: 6px 8px;
@@ -141,25 +141,17 @@ html, body {
 .badge.eve::before   { content: "🌆 "; }
 .badge.night::before { content: "🌙 "; }
 
-/* プレースホルダー行（第2週以降のダミー） */
 .placeholder {
   color: #64748b;
   text-align: left;
   padding: 14px;
 }
 
-/* 小さい端末での微調整 */
-@media (max-width: 380px) {
-  .shift-table th:not(.week-col),
-  .shift-table td { width: 110px; }
-  .shift-table { min-width: 680px; }
-}
-/* ===== スマホ最適化（～640px） ===== */
+/* ==============================
+   スマホ最適化
+============================== */
 @media (max-width: 640px) {
-  /* 横スクロールは維持しつつ、最小幅を少し縮める */
   .shift-table { min-width: 640px; }
-
-  /* 列幅と余白をコンパクトに */
   .shift-table th:not(.week-col),
   .shift-table td { width: 100px; }
   .shift-table .week-col { width: 72px; min-width: 72px; }
@@ -167,55 +159,20 @@ html, body {
   .shift-table th,
   .shift-table td {
     padding: 6px 6px;
-    font-size: 11px;        /* 全体フォントを小さめに */
+    font-size: 11px;
     line-height: 1.2;
   }
 
-  /* 日付ヘッダ（保存済バッジ含む）を少し小さく */
-  .day-head { 
-    font-size: 12px; 
-    margin-bottom: 4px;
-    white-space: nowrap;
-  }
-  .save { 
-    font-size: 10px;
-    padding: 1px 5px;
-  }
+  .day-head { font-size: 12px; margin-bottom: 4px; }
+  .save { font-size: 10px; padding: 1px 5px; }
 
-  /* 各スロットの余白を圧縮＆省略表示を強める */
-  .slot {
-    padding: 4px 6px;
-    margin: 3px 0;
-    line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;   /* 1行で収める */
-    border-radius: 5px;
-  }
+  .slot { padding: 4px 6px; margin: 3px 0; line-height: 1.2; }
 
-  /* バッジは絵文字だけ表示（文字は隠す）→省スペース */
-  .badge {
-    font-size: 0;          /* 早朝/午前…のテキストは隠す */
-    padding: 0;
-    border: none;
-    background: transparent;
-    margin-right: 6px;
-    vertical-align: -1px;
-  }
-  .badge::before {
-    font-size: 14px;       /* 絵文字だけ表示 */
-  }
-
-  /* sticky見出しの視認性（影を少し強める） */
-  .sticky-top {
-    box-shadow: 0 2px 0 rgba(15,23,42,.06);
-  }
-  .sticky-left {
-    box-shadow: 1px 0 0 rgba(15,23,42,.08);
-  }
+  .badge { font-size: 0; padding: 0; border: none; background: transparent; }
+  .badge::before { font-size: 14px; }
+  .sticky-top { box-shadow: 0 2px 0 rgba(15,23,42,.06); }
+  .sticky-left { box-shadow: 1px 0 0 rgba(15,23,42,.08); }
 }
-
-/* さらに小さい端末（～380px）向けの微調整 */
 @media (max-width: 380px) {
   .shift-table { min-width: 600px; }
   .shift-table th:not(.week-col),
@@ -225,8 +182,10 @@ html, body {
   .badge::before { font-size: 13px; }
 }
 
-/* 編集ページの保存バー */
-.edit-toolbar {
+/* ==============================
+   保存バー・ボタン
+============================== */
+.edit-toolbar{
   position: sticky;
   top: 0;
   z-index: 30;
@@ -236,15 +195,14 @@ html, body {
   display: flex;
   gap: 8px;
 }
-.edit-toolbar.sticky-footer {
+.edit-toolbar.sticky-footer{
   top: auto;
   bottom: 0;
   border-top: 1px solid #e5e7eb;
   border-bottom: none;
 }
 
-/* ボタン体裁 */
-.btn {
+.btn{
   display: inline-block;
   padding: 8px 14px;
   border: 1px solid #cbd5e1;
@@ -254,11 +212,9 @@ html, body {
   text-decoration: none;
   color: #0f172a;
 }
-.btn-primary {
+.btn-primary{
   background: #2563eb;
   border-color: #1d4ed8;
   color: #fff;
 }
-.btn:active {
-  transform: translateY(1px);
-}
+.btn:active{ transform: translateY(1px); }
