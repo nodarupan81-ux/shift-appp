@@ -1,5 +1,4 @@
-﻿# -*- coding: utf-8 -*-
-import os
+﻿import os
 import json
 import calendar
 import datetime as dt
@@ -21,8 +20,8 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "adminpass")   # 邂｡逅・�
 
 # 蜿匁桶縺・ｺ苓・
 STORES = {
-    "wakaba2": "\u82e5\u84492\u4e01\u76ee\u5e97",   # 若葉2丁目店
-    "akitsu":  "\u79cb\u6d25\u65b0\u753a\u5e97",   # 秋津新町店
+    "wakaba2": "若葉2丁目店",
+    "akitsu": "秋津新町店",
 }
 
 # 繝・・繧ｿ繝・ぅ繝ｬ繧ｯ繝医Μ
@@ -101,14 +100,14 @@ def is_staff_authed(store_id: str) -> bool:
 
 
 # ====== 逕ｻ髱｢蜈ｱ騾壹・繝槭せ繧ｿ ======
-WEEKDAYS = ["\u6708", "\u706b", "\u6c34", "\u6728", "\u91d1", "\u571f", "\u65e5"]
+WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
 SHIFTS = ["socho", "gozen", "gogo", "yugata", "shinya"]
 SHIFTS_LABELS = {
-    "socho":  "\u65e9\u671d",  # 早朝
-    "gozen":  "\u5348\u524d",  # 午前
-    "gogo":   "\u5348\u5f8c",  # 午後
-    "yugata": "\u5915\u65b9",  # 夕方
-    "shinya": "\u6df1\u591c",  # 深夜
+    "socho":  "早朝",
+    "gozen":  "午前",
+    "gogo":   "午後",
+    "yugata": "夕方",
+    "shinya": "深夜",
 }
 
 
@@ -214,5 +213,4 @@ if __name__ == "__main__":
 
 
 # redeploy 2025-09-02T14:07:07
-
 
