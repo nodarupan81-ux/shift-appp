@@ -225,3 +225,40 @@ html, body {
   .badge::before { font-size: 13px; }
 }
 
+/* 編集ページの保存バー */
+.edit-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: #fff;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  gap: 8px;
+}
+.edit-toolbar.sticky-footer {
+  top: auto;
+  bottom: 0;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: none;
+}
+
+/* ボタン体裁 */
+.btn {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  font-size: 14px;
+  text-decoration: none;
+  color: #0f172a;
+}
+.btn-primary {
+  background: #2563eb;
+  border-color: #1d4ed8;
+  color: #fff;
+}
+.btn:active {
+  transform: translateY(1px);
+}
