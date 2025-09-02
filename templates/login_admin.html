@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>管理者ログイン - {{ store_name }}</title>
+  <title>邂｡逅・・Ο繧ｰ繧､繝ｳ - {{ store_name }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     .login-container{max-width:360px;margin:80px auto;background:rgba(255,255,255,.92);border:1px solid #e5e7eb;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);text-align:center;}
@@ -13,13 +13,14 @@
 </head>
 <body>
   <div class="login-container">
-    <h2>管理者ログイン<br><small>{{ store_name }}</small></h2>
+    <h2>邂｡逅・・Ο繧ｰ繧､繝ｳ<br><small>{{ store_name }}</small></h2>
     {% if error %}<div class="err">{{ error }}</div>{% endif %}
     <form method="post">
-      <input type="text" name="username" placeholder="ユーザー名" required>
-      <input type="password" name="password" placeholder="パスワード" required>
-      <button type="submit" class="primary" style="width:100%;">ログイン</button>
+      <input type="text" name="username" placeholder="繝ｦ繝ｼ繧ｶ繝ｼ蜷・ required>
+      <input type="password" name="password" placeholder="繝代せ繝ｯ繝ｼ繝・ required>
+      <button type="submit" class="primary" style="width:100%;">繝ｭ繧ｰ繧､繝ｳ</button>
     </form>
   </div>
 </body>
 </html>
+

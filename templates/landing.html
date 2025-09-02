@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>店舗選択 - シフト表</title>
+  <title>蠎苓・驕ｸ謚・- 繧ｷ繝輔ヨ陦ｨ</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
@@ -18,27 +18,27 @@
 </head>
 <body>
   <div class="container">
-    <h1>店舗を選んでください</h1>
+    <h1>蠎苓・繧帝∈繧薙〒縺上□縺輔＞</h1>
 
     <div class="cards">
       {% for sid, sname in stores.items() %}
       <div class="card">
         <h2>{{ sname }}</h2>
         <div class="btns">
-          <!-- 従業員ログイン（共通パスワード）→ ログイン後は閲覧ページへ -->
-          <a class="btn" href="{{ url_for('staff_login', store_id=sid, next=url_for('view', store_id=sid)) }}">従業員ログイン</a>
+          <!-- 蠕捺･ｭ蜩｡繝ｭ繧ｰ繧､繝ｳ・亥・騾壹ヱ繧ｹ繝ｯ繝ｼ繝会ｼ俄・ 繝ｭ繧ｰ繧､繝ｳ蠕後・髢ｲ隕ｧ繝壹・繧ｸ縺ｸ -->
+          <a class="btn" href="{{ url_for('staff_login', store_id=sid, next=url_for('view', store_id=sid)) }}">蠕捺･ｭ蜩｡繝ｭ繧ｰ繧､繝ｳ</a>
 
-          <!-- そのまま閲覧に行こうとすると、未ログインなら staff-login にリダイレクトされる -->
-          <a class="btn secondary" href="{{ url_for('view', store_id=sid) }}">閲覧だけ</a>
+          <!-- 縺昴・縺ｾ縺ｾ髢ｲ隕ｧ縺ｫ陦後％縺・→縺吶ｋ縺ｨ縲∵悴繝ｭ繧ｰ繧､繝ｳ縺ｪ繧・staff-login 縺ｫ繝ｪ繝繧､繝ｬ繧ｯ繝医＆繧後ｋ -->
+          <a class="btn secondary" href="{{ url_for('view', store_id=sid) }}">髢ｲ隕ｧ縺縺・/a>
 
-          <!-- 管理者ログイン（成功後、閲覧か編集に戻す。ここでは閲覧へ） -->
-          <a class="btn" href="{{ url_for('login_admin', store_id=sid, next=url_for('view', store_id=sid)) }}">管理者ログイン</a>
+          <!-- 邂｡逅・・Ο繧ｰ繧､繝ｳ・域・蜉溷ｾ後・夢隕ｧ縺狗ｷｨ髮・↓謌ｻ縺吶ゅ％縺薙〒縺ｯ髢ｲ隕ｧ縺ｸ・・-->
+          <a class="btn" href="{{ url_for('login_admin', store_id=sid, next=url_for('view', store_id=sid)) }}">邂｡逅・・Ο繧ｰ繧､繝ｳ</a>
 
-          <!-- 管理者の編集画面（未ログインなら管理者ログインへ） -->
-          <a class="btn secondary" href="{{ url_for('schedule', store_id=sid) }}">シフト編集</a>
+          <!-- 邂｡逅・・・邱ｨ髮・判髱｢・域悴繝ｭ繧ｰ繧､繝ｳ縺ｪ繧臥ｮ｡逅・・Ο繧ｰ繧､繝ｳ縺ｸ・・-->
+          <a class="btn secondary" href="{{ url_for('schedule', store_id=sid) }}">繧ｷ繝輔ヨ邱ｨ髮・/a>
 
-          <!-- 名簿・定員（未ログインなら管理者ログインへ） -->
-          <a class="btn secondary" href="{{ url_for('settings', store_id=sid) }}">名簿・定員</a>
+          <!-- 蜷咲ｰｿ繝ｻ螳壼藤・域悴繝ｭ繧ｰ繧､繝ｳ縺ｪ繧臥ｮ｡逅・・Ο繧ｰ繧､繝ｳ縺ｸ・・-->
+          <a class="btn secondary" href="{{ url_for('settings', store_id=sid) }}">蜷咲ｰｿ繝ｻ螳壼藤</a>
         </div>
       </div>
       {% endfor %}
@@ -46,3 +46,4 @@
   </div>
 </body>
 </html>
+

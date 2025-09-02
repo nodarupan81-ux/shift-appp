@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>{{ store_name }} | 従業員ログイン</title>
+  <title>{{ store_name }} | 蠕捺･ｭ蜩｡繝ｭ繧ｰ繧､繝ｳ</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     .login-card{
@@ -24,24 +24,25 @@
 </head>
 <body>
   <div class="login-card">
-    <h2>従業員ログイン</h2>
-    <p>{{ store_name }} のシフト閲覧にはパスワードが必要です。</p>
+    <h2>蠕捺･ｭ蜩｡繝ｭ繧ｰ繧､繝ｳ</h2>
+    <p>{{ store_name }} 縺ｮ繧ｷ繝輔ヨ髢ｲ隕ｧ縺ｫ縺ｯ繝代せ繝ｯ繝ｼ繝峨′蠢・ｦ√〒縺吶・/p>
 
     {% if error %}
       <div class="error">{{ error }}</div>
     {% endif %}
 
     <form method="post" action="{{ url_for('staff_login', store_id=store_id, next=request.args.get('next')) }}">
-      <input type="password" name="password" placeholder="閲覧用パスワード" required>
+      <input type="password" name="password" placeholder="髢ｲ隕ｧ逕ｨ繝代せ繝ｯ繝ｼ繝・ required>
       <div class="actions">
-        <button class="btn" type="submit">ログイン</button>
+        <button class="btn" type="submit">繝ｭ繧ｰ繧､繝ｳ</button>
       </div>
     </form>
 
     <div class="small">
-      店舗トップへ戻る：
-      <a href="{{ url_for('landing') }}">店舗選択</a>
+      蠎苓・繝医ャ繝励∈謌ｻ繧具ｼ・
+      <a href="{{ url_for('landing') }}">蠎苓・驕ｸ謚・/a>
     </div>
   </div>
 </body>
 </html>
+

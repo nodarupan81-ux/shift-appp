@@ -309,16 +309,6 @@ if __name__ == "__main__":
 
 
 # ---- alias for old templates (added by helper) ----
-@app.route("/index")
-def index():
-    return redirect(url_for("landing"))
-
-
-@app.route("/index")
-def index():
-    return redirect(url_for("landing"))
-
-
 # ---- unified logout route (single source of truth) ----
 @app.route("/logout")
 def logout():
@@ -326,3 +316,4 @@ def logout():
         session.pop(f"is_admin_{sid}", None)
         session.pop(f"staff_authed_{sid}", None)
     return redirect(url_for("landing"))
+

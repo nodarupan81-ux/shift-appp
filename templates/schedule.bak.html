@@ -1,40 +1,40 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{{ store_name }} - {{ year }}年{{ month }}月 シフト編集</title>
+  <title>{{ store_name }} - {{ year }}蟷ｴ{{ month }}譛・繧ｷ繝輔ヨ邱ｨ髮・/title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=savebtn2">
 </head>
 <body>
   <header class="page-header">
-    <h1>{{ store_name }} {{ year }}年{{ month }}月 シフト編集</h1>
+    <h1>{{ store_name }} {{ year }}蟷ｴ{{ month }}譛・繧ｷ繝輔ヨ邱ｨ髮・/h1>
   </header>
 
-  <!-- フォーム開始：同じURLにPOST -->
+  <!-- 繝輔か繝ｼ繝髢句ｧ具ｼ壼酔縺篭RL縺ｫPOST -->
   <form method="post" action="">
     <input type="hidden" name="store_id" value="{{ store_id }}">
     <input type="hidden" name="year" value="{{ year }}">
     <input type="hidden" name="month" value="{{ month }}">
 
-    <!-- 上部ツールバー（保存／戻る） -->
+    <!-- 荳企Κ繝・・繝ｫ繝舌・・井ｿ晏ｭ假ｼ乗綾繧具ｼ・-->
     <div class="edit-toolbar">
-      <button type="submit" class="btn btn-primary">保存</button>
-      <a href="{{ url_for('index') }}" class="btn">戻る</a>
+      <button type="submit" class="btn btn-primary">菫晏ｭ・/button>
+      <a href="{{ url_for('landing') }}" class="btn">謌ｻ繧・/a>
     </div>
 
-    <div class="table-wrap" aria-label="シフト表 横スクロール領域">
-      <table class="shift-table" role="table" aria-label="シフト表">
+    <div class="table-wrap" aria-label="繧ｷ繝輔ヨ陦ｨ 讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ鬆伜沺">
+      <table class="shift-table" role="table" aria-label="繧ｷ繝輔ヨ陦ｨ">
         <thead>
           <tr>
-            <th class="sticky-left sticky-top week-col">週</th>
-            <th class="sticky-top">月</th>
-            <th class="sticky-top">火</th>
-            <th class="sticky-top">水</th>
-            <th class="sticky-top">木</th>
-            <th class="sticky-top">金</th>
-            <th class="sticky-top">土</th>
-            <th class="sticky-top">日</th>
+            <th class="sticky-left sticky-top week-col">騾ｱ</th>
+            <th class="sticky-top">譛・/th>
+            <th class="sticky-top">轣ｫ</th>
+            <th class="sticky-top">豌ｴ</th>
+            <th class="sticky-top">譛ｨ</th>
+            <th class="sticky-top">驥・/th>
+            <th class="sticky-top">蝨・/th>
+            <th class="sticky-top">譌･</th>
           </tr>
         </thead>
         <tbody>
@@ -43,21 +43,21 @@
             <th class="sticky-left week-col">{{ week }}</th>
             {% for day, shifts in days.items() %}
             <td>
-              <div class="day-head">{{ day }}日</div>
+              <div class="day-head">{{ day }}譌･</div>
 
-              {% for slot in ["早朝","午前","午後","夕方","深夜"] %}
+              {% for slot in ["譌ｩ譛・,"蜊亥燕","蜊亥ｾ・,"螟墓婿","豺ｱ螟・] %}
               <div class="slot">
                 <span class="badge
-                  {% if slot=='早朝' %}dawn
-                  {% elif slot=='午前' %}am
-                  {% elif slot=='午後' %}pm
-                  {% elif slot=='夕方' %}eve
+                  {% if slot=='譌ｩ譛・ %}dawn
+                  {% elif slot=='蜊亥燕' %}am
+                  {% elif slot=='蜊亥ｾ・ %}pm
+                  {% elif slot=='螟墓婿' %}eve
                   {% else %}night{% endif %}">
                   {{ slot }}
                 </span>
 
                 <select name="shifts[{{ week }}][{{ day }}][{{ slot }}]">
-                  <option value="">ー</option>
+                  <option value="">繝ｼ</option>
                   {% for staff in staff_list %}
                     <option value="{{ staff }}" {% if shifts.get(slot) == staff %}selected{% endif %}>
                       {{ staff }}
@@ -74,14 +74,15 @@
       </table>
     </div>
 
-    <!-- 下部ツールバー（保存ボタンもう一つ） -->
+    <!-- 荳矩Κ繝・・繝ｫ繝舌・・井ｿ晏ｭ倥・繧ｿ繝ｳ繧ゅ≧荳縺､・・-->
     <div class="edit-toolbar sticky-footer">
-      <button type="submit" class="btn btn-primary">保存</button>
+      <button type="submit" class="btn btn-primary">菫晏ｭ・/button>
     </div>
   </form>
 
   <footer class="page-footer">
-    <small>横にスワイプでスクロールできます</small>
+    <small>讓ｪ縺ｫ繧ｹ繝ｯ繧､繝励〒繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｧ縺阪∪縺・/small>
   </footer>
 </body>
 </html>
+

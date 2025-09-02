@@ -1,19 +1,19 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>{{ store_name }} - 名簿・定員の設定</title>
+  <title>{{ store_name }} - 蜷咲ｰｿ繝ｻ螳壼藤縺ｮ險ｭ螳・/title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <div class="header">
     <div class="container header-inner">
-      <h1 class="title">{{ store_name }} - 名簿・定員の設定</h1>
+      <h1 class="title">{{ store_name }} - 蜷咲ｰｿ繝ｻ螳壼藤縺ｮ險ｭ螳・/h1>
       <div></div>
       <div class="nav">
-        <a href="{{ url_for('schedule', store_id=store_id) }}">シフト編集</a> |
-        <a href="{{ url_for('view', store_id=store_id) }}">従業員用（閲覧）</a> |
-        <a href="{{ url_for('logout') }}">ログアウト</a>
+        <a href="{{ url_for('schedule', store_id=store_id) }}">繧ｷ繝輔ヨ邱ｨ髮・/a> |
+        <a href="{{ url_for('view', store_id=store_id) }}">蠕捺･ｭ蜩｡逕ｨ・磯夢隕ｧ・・/a> |
+        <a href="{{ url_for('logout') }}">繝ｭ繧ｰ繧｢繧ｦ繝・/a>
       </div>
     </div>
   </div>
@@ -30,14 +30,15 @@
     {% endwith %}
 
     <form method="post" class="panel">
-      <h2>従業員リスト</h2>
-      <p>1行につき1名で入力してください（例：山田太郎）</p>
+      <h2>蠕捺･ｭ蜩｡繝ｪ繧ｹ繝・/h2>
+      <p>1陦後↓縺､縺・蜷阪〒蜈･蜉帙＠縺ｦ縺上□縺輔＞・井ｾ具ｼ壼ｱｱ逕ｰ螟ｪ驛趣ｼ・/p>
       <textarea class="employees" name="employees_text" rows="14"
-        placeholder="例：&#10;山田太郎&#10;佐藤花子">{{ employees_text or '' }}</textarea>
+        placeholder="萓具ｼ・#10;螻ｱ逕ｰ螟ｪ驛・#10;菴占陸闃ｱ蟄・>{{ employees_text or '' }}</textarea>
       <div style="margin-top:10px">
-        <button class="primary" type="submit">保存</button>
+        <button class="primary" type="submit">菫晏ｭ・/button>
       </div>
     </form>
   </div>
 </body>
 </html>
+
