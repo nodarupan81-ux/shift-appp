@@ -186,7 +186,7 @@ def view(store_id):
     month_options = list(range(1, 13))
 
     return render_template(
-        "schedule2.html",
+        "schedule.html",
         title=None,
         store_name=store_name(store_id),
         store_id=store_id,
@@ -246,7 +246,7 @@ def schedule(store_id):
     month_options = list(range(1, 13))
 
     return render_template(
-        "schedule2.html",
+        "schedule.html",
         title=None,
         store_name=store_name(store_id),
         store_id=store_id,
