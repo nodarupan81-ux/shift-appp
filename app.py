@@ -327,3 +327,15 @@ def logout():
         session.pop(f"is_admin_{sid}", None)
         session.pop(f"staff_authed_{sid}", None)
     return redirect(url_for("landing"))
+# ---- alias for old templates (added by helper) ----
+@app.route("/index")
+def index():
+    return redirect(url_for("landing"))
+
+@app.route("/logout")
+def logout():
+    # すべての店舗コンテキストのログアウト
+    for sid in STORES.keys():
+        session.pop(f"is_admin_{sid}", None)
+        session.pop(f"staff_authed_{sid}", None)
+    return redirect(url_for("landing"))
