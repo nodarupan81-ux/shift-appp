@@ -301,8 +301,17 @@ def settings(store_id):
 def go_store_root(store_id):
     require_store_or_404(store_id)
     return redirect(url_for("view", store_id=store_id))
+# ---- added global logout ----
+@app.route("/logout")
+def logout():
+    # 全店舗分のセッションフラグをまとめて削除してトップへ戻す
+    for sid in STORES.keys():
+        session.pop(f"staff_authed_{sid}", None)
+        session.pop(f"is_admin_{sid}", None)
+    return redirect(url_for("landing"))
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
