@@ -1,18 +1,18 @@
-﻿<!doctype html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <title>繧ｷ繝輔ヨ陦ｨ</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>シフト管理アプリ</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-  <header class="header">
-    <h1>譛磯俣繧ｷ繝輔ヨ陦ｨ・・騾ｱ ﾃ・7譌･ ﾃ・5莠､莉｣・・/h1>
+  <header class="site-header">
+    <h1 class="site-title">シフト管理アプリ</h1>
   </header>
+
   <main class="container">
     {% block content %}{% endblock %}
   </main>
 </body>
 </html>
-

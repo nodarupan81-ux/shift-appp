@@ -1,30 +1,28 @@
-﻿<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8" />
-  <title>店舗を選択してください</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+﻿{% extends "base.html" %}
+{% block content %}
   <h1 class="page-title">全店舗メニュー</h1>
 
-  <div class="store-list">
-    <div class="store">
+  <div class="store-cards">
+    <section class="card">
       <h2>若葉2丁目店</h2>
-      <a href="{{ url_for('staff_login', store_id='wakaba2') }}" class="btn">スタッフログイン</a>
-      <a href="{{ url_for('schedule', store_id='wakaba2', year=dt.date.today().year, month=dt.date.today().month) }}" class="btn">閲覧（スタッフ）</a>
-      <a href="{{ url_for('settings', store_id='wakaba2') }}" class="btn">設定</a>
-      <a href="{{ url_for('logout') }}" class="btn">ログアウト</a>
-    </div>
+      <div class="toolbar">
+        <a class="btn" href="{{ url_for('staff_login', store_id='wakaba2') }}">スタッフログイン</a>
+        <a class="btn" href="{{ url_for('login_admin', store_id='wakaba2') }}">管理者ログイン</a>
+        <a class="btn" href="{{ url_for('view', store_id='wakaba2') }}">閲覧（カレンダー表示）</a>
+        <a class="btn" href="{{ url_for('schedule', store_id='wakaba2') }}">シフトを編集</a>
+        <a class="btn" href="{{ url_for('settings', store_id='wakaba2') }}">従業員設定</a>
+      </div>
+    </section>
 
-    <div class="store">
+    <section class="card">
       <h2>秋津新町店</h2>
-      <a href="{{ url_for('staff_login', store_id='akitsu') }}" class="btn">スタッフログイン</a>
-      <a href="{{ url_for('schedule', store_id='akitsu', year=dt.date.today().year, month=dt.date.today().month) }}" class="btn">閲覧（スタッフ）</a>
-      <a href="{{ url_for('settings', store_id='akitsu') }}" class="btn">設定</a>
-      <a href="{{ url_for('logout') }}" class="btn">ログアウト</a>
-    </div>
+      <div class="toolbar">
+        <a class="btn" href="{{ url_for('staff_login', store_id='akitsu') }}">スタッフログイン</a>
+        <a class="btn" href="{{ url_for('login_admin', store_id='akitsu') }}">管理者ログイン</a>
+        <a class="btn" href="{{ url_for('view', store_id='akitsu') }}">閲覧（カレンダー表示）</a>
+        <a class="btn" href="{{ url_for('schedule', store_id='akitsu') }}">シフトを編集</a>
+        <a class="btn" href="{{ url_for('settings', store_id='akitsu') }}">従業員設定</a>
+      </div>
+    </section>
   </div>
-</body>
-</html>
-
+{% endblock %}
