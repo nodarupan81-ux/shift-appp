@@ -103,11 +103,11 @@ def is_staff_authed(store_id: str) -> bool:
 WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
 SHIFTS = ["socho", "gozen", "gogo", "yugata", "shinya"]
 SHIFTS_LABELS = {
-    "socho":  "早朝",
-    "gozen":  "午前",
-    "gogo":   "午後",
-    "yugata": "夕方",
-    "shinya": "深夜",
+    "socho":  "譌ｩ譛・,
+    "gozen":  "蜊亥燕",
+    "gogo":   "蜊亥ｾ・,
+    "yugata": "螟墓婿",
+    "shinya": "豺ｱ螟・,
 }
 
 
@@ -127,7 +127,113 @@ def staff_login(store_id):
         if pwd == STAFF_PASSWORD:
             session[f"staff_authed_{store_id}"] = True
             return redirect(next_url)
-        flash("保存しました。", "success")
+        flash("繝代せ繝ｯ繝ｼ繝峨′驕輔＞縺ｾ縺吶・, "error")
+    next_url = request.args.get("next") or url_for("view", store_id=store_id)
+    return render_template("staff_login.html", store_id=store_id, store_name=store_name(store_id), next_url=next_url)
+
+
+@app.route("/<store_id>/staff-logout")
+def staff_logout(store_id):
+    require_store_or_404(store_id)
+    session.pop(f"staff_authed_{store_id}", None)
+    flash("繧ｹ繧ｿ繝・ヵ縺ｨ縺励※繝ｭ繧ｰ繧｢繧ｦ繝医＠縺ｾ縺励◆縲・, "info")
+    return redirect(url_for("staff_login", store_id=store_id))
+
+
+# ====== 邂｡逅・・Ο繧ｰ繧､繝ｳ ======
+@app.route("/<store_id>/login-admin", methods=["GET", "POST"])
+def login_admin(store_id):
+    require_store_or_404(store_id)
+    if request.method == "POST":
+        pwd = request.form.get("password", "")
+        next_url = request.args.get("next") or request.form.get("next") or url_for("schedule", store_id=store_id)
+        if pwd == ADMIN_PASSWORD:
+            session[f"is_admin_{store_id}"] = True
+            session[f"staff_authed_{store_id}"] = True
+            return redirect(next_url)
+        flash("繝代せ繝ｯ繝ｼ繝峨′驕輔＞縺ｾ縺吶・, "error")
+    next_url = request.args.get("next") or url_for("schedule", store_id=store_id)
+    return render_template("login_admin.html", store_id=store_id, store_name=store_name(store_id), next_url=next_url)
+
+
+@app.route("/logout")
+def logout():
+    for sid in STORES.keys():
+        session.pop(f"is_admin_{sid}", None)
+        session.pop(f"staff_authed_{sid}", None)
+    flash("繝ｭ繧ｰ繧｢繧ｦ繝医＠縺ｾ縺励◆縲・, "info")
+    return redirect(url_for("landing"))
+
+
+# ====== 蠕捺･ｭ蜩｡髢ｲ隕ｧ ======
+@app.route("/<store_id>/view")
+def view(store_id):
+    require_store_or_404(store_id)
+    if not (is_staff_authed(store_id) or is_admin(store_id)):
+        return redirect(url_for("staff_login", store_id=store_id, next=url_for("view", store_id=store_id)))
+
+    today = dt.date.today()
+    year = int(request.args.get("year") or today.year)
+    month = int(request.args.get("month") or today.month)
+
+    employees = load_employees(store_id)
+    schedules = load_schedule(store_id, year, month)
+
+    weeks = build_calendar(year, month)
+    prev_y, prev_m, next_y, next_m = prev_next_year_month(year, month)
+
+    year_options = list(range(today.year - 1, today.year + 2))
+    month_options = list(range(1, 13))
+
+    return render_template(
+        "schedule.html",
+        title=None,
+        store_name=store_name(store_id),
+        store_id=store_id,
+        employees=employees,
+        prefill=schedules,
+        shifts=SHIFTS,
+        shifts_labels=SHIFTS_LABELS,
+        weekdays=WEEKDAYS,
+        weeks=weeks,
+        year=year,
+        month=month,
+        prev_year=prev_y,
+        prev_month=prev_m,
+        next_year=next_y,
+        next_month=next_m,
+        year_options=year_options,
+        month_options=month_options,
+        is_admin=False,
+        dt=dt,
+        now=dt.date.today(),
+    )
+
+
+# ====== 邂｡逅・・ｼ壹す繝輔ヨ邱ｨ髮・======
+@app.route("/<store_id>/schedule", methods=["GET", "POST"])
+def schedule(store_id):
+    require_store_or_404(store_id)
+    if not is_admin(store_id):
+        return redirect(url_for("login_admin", store_id=store_id, next=url_for("schedule", store_id=store_id)))
+
+    today = dt.date.today()
+    if request.method == "POST":
+        year = int(request.form.get("year") or today.year)
+        month = int(request.form.get("month") or today.month)
+        data = load_schedule(store_id, year, month)
+
+        _, last = month_bounds(year, month)
+        for day in range(1, last.day + 1):
+            day_key = str(day)
+            if day_key not in data:
+                data[day_key] = {}
+            for s in SHIFTS:
+                a1 = request.form.get(f"day_{day}_{s}_1", "")
+                a2 = request.form.get(f"day_{day}_{s}_2", "")
+                data[day_key][s] = [a1, a2]
+        save_schedule(store_id, year, month, data)
+        flash("菫晏ｭ倥＠縺ｾ縺励◆縲・, "success")
         return redirect(url_for("schedule", store_id=store_id, year=year, month=month))
 
     year = int(request.args.get("year") or today.year)
@@ -183,7 +289,7 @@ def settings(store_id):
                 target_path = DATA_DIR / store_id / "employees.json"
                 target_path.parent.mkdir(parents=True, exist_ok=True)
                 target_path.write_text(json.dumps(new_list, ensure_ascii=False, indent=2), encoding="utf-8")
-                flash("保存しました。", "success")
+                flash("蜷咲ｰｿ繧呈峩譁ｰ縺励∪縺励◆縲・, "success")
             else:
                 flash("蜈･蜉帙′遨ｺ縺ｮ縺溘ａ蜷咲ｰｿ縺ｯ螟画峩縺励∪縺帙ｓ縺ｧ縺励◆縲・, "info")
             return redirect(url_for("settings", store_id=store_id))
@@ -209,6 +315,5 @@ def go_store_root(store_id):
 # ====== 繝ｭ繝ｼ繧ｫ繝ｫ襍ｷ蜍慕畑 ======
 if __name__ == "__main__":
     app.run(debug=True)
-
 
 
