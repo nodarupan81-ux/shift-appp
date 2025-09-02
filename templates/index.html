@@ -1,62 +1,116 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{{ store_name }} - {{ year }}年 {{ month }}月 シフト表</title>
-  <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Arial, sans-serif; margin: 24px; }
-    .header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-    .title { font-size: 1.25rem; font-weight: 700; }
-    .nav { display: flex; gap: 8px; }
-    .btn {
-      display: inline-block; padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; text-decoration: none; color: #222;
-      background: #f7f7f7;
-    }
-    .btn:hover { background: #eee; }
-    table { border-collapse: collapse; width: 100%; max-width: 100%; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; white-space: nowrap; }
-    th { background: #fafafa; }
-    .name { text-align: left; white-space: normal; }
-    .subtle { color: #666; font-weight: 500; }
-    .grid { overflow-x: auto; }
-  </style>
+  <meta charset="utf-8" />
+  <title>シフト表</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <div class="header">
-    <div class="title">
-      {{ store_name }} <span class="subtle">- {{ year }}年 {{ month }}月 シフト表</span>
-    </div>
-    <div class="nav">
-      <a class="btn" href="{{ url_for('prev_month', year=year, month=month) }}">&laquo; 前月</a>
-      <a class="btn" href="{{ url_for('index') }}">今月へ</a>
-      <a class="btn" href="{{ url_for('next_month', year=year, month=month) }}">翌月 &raquo;</a>
-    </div>
-  </div>
+  <header class="page-header">
+    <h1>シフト表</h1>
+  </header>
 
-  <div class="grid">
-    <table>
+  <!-- 横スクロールのラッパ -->
+  <div class="table-wrap" aria-label="シフト表 横スクロール領域">
+    <!-- 既存のテーブルに近い構造。必要に応じてJinjaのループを差し込んでください -->
+    <table class="shift-table" role="table" aria-label="シフト表">
       <thead>
         <tr>
-          <th>名前</th>
-          {# まずは 1〜7日を例示。後で1ヶ月分(28〜31日)へ拡張しやすい作りに。 #}
-          {% for d in days %}
-            <th>{{ month }}/{{ d }}</th>
-          {% endfor %}
+          <!-- 左端の列（週）を固定 -->
+          <th class="sticky-left sticky-top week-col">週</th>
+          <!-- 曜日ヘッダーを上部固定 -->
+          <th class="sticky-top">月</th>
+          <th class="sticky-top">火</th>
+          <th class="sticky-top">水</th>
+          <th class="sticky-top">木</th>
+          <th class="sticky-top">金</th>
+          <th class="sticky-top">土</th>
+          <th class="sticky-top">日</th>
         </tr>
       </thead>
+
       <tbody>
-        {% for row in shifts %}
-          <tr>
-            <td class="name">{{ row.name }}</td>
-            {% for d in days %}
-              <td>{{ row["d" ~ d] }}</td>
-            {% endfor %}
-          </tr>
-        {% endfor %}
+        <!-- 第1週 -->
+        <tr>
+          <th class="sticky-left week-col">第1週</th>
+          <td>
+            <div class="day-head">1(日) <span class="save">保存済</span></div>
+            <div class="slot"><span class="badge dawn">早朝</span> ー</div>
+            <div class="slot"><span class="badge am">午前</span> ー</div>
+            <div class="slot"><span class="badge pm">午後</span> ー</div>
+            <div class="slot"><span class="badge eve">夕方</span> ー</div>
+            <div class="slot"><span class="badge night">深夜</span> ー</div>
+          </td>
+          <td>
+            <div class="day-head">2(月) <span class="save">保存済</span></div>
+            <div class="slot"><span class="badge dawn">早朝</span> ー</div>
+            <div class="slot"><span class="badge am">午前</span> 長ネ</div>
+            <div class="slot"><span class="badge pm">午後</span> ア</div>
+            <div class="slot"><span class="badge eve">夕方</span> ﾊ</div>
+            <div class="slot"><span class="badge night">深夜</span> ー</div>
+          </td>
+          <td>
+            <div class="day-head">3(火) <span class="save">保存済</span></div>
+            <div class="slot"><span class="badge dawn">早朝</span> ー</div>
+            <div class="slot"><span class="badge am">午前</span> ネ</div>
+            <div class="slot"><span class="badge pm">午後</span> ー</div>
+            <div class="slot"><span class="badge eve">夕方</span> 店</div>
+            <div class="slot"><span class="badge night">深夜</span> ー</div>
+          </td>
+          <td>
+            <div class="day-head">4(水) <span class="save">保存済</span></div>
+            <div class="slot"><span class="badge dawn">早朝</span> ー</div>
+            <div class="slot"><span class="badge am">午前</span> ー</div>
+            <div class="slot"><span class="badge pm">午後</span> ー</div>
+            <div class="slot"><span class="badge eve">夕方</span> ー</div>
+            <div class="slot"><span class="badge night">深夜</span> ー</div>
+          </td>
+          <td>
+            <div class="day-head">5(木) <span class="save">保存済</span></div>
+            <div class="slot"><span class="badge dawn">早朝</span> ー</div>
+            <div class="slot"><span class="badge am">午前</span> ー</div>
+            <div class="slot"><span class="badge pm">午後</span> ー</div>
+            <div class="slot"><span class="badge eve">夕方</span> ー</div>
+            <div class="slot"><span class="badge night">深夜</span> マネ<br>アラひょう</div>
+          </td>
+          <td>
+            <div class="day-head">6(金) <span class="save">保存済</span></div>
+            <div class="slot"><span class="badge dawn">早朝</span> ー</div>
+            <div class="slot"><span class="badge am">午前</span> ー</div>
+            <div class="slot"><span class="badge pm">午後</span> ー</div>
+            <div class="slot"><span class="badge eve">夕方</span> ー</div>
+            <div class="slot"><span class="badge night">深夜</span> ー</div>
+          </td>
+          <td>
+            <div class="day-head">7(土) <span class="save">保存済</span></div>
+            <div class="slot"><span class="badge dawn">早朝</span> ー</div>
+            <div class="slot"><span class="badge am">午前</span> ー</div>
+            <div class="slot"><span class="badge pm">午後</span> ー</div>
+            <div class="slot"><span class="badge eve">夕方</span> ー</div>
+            <div class="slot"><span class="badge night">深夜</span> ー</div>
+          </td>
+          <td>
+            <div class="day-head">8(日) <span class="save">保存済</span></div>
+            <div class="slot"><span class="badge dawn">早朝</span> ー</div>
+            <div class="slot"><span class="badge am">午前</span> ー</div>
+            <div class="slot"><span class="badge pm">午後</span> ー</div>
+            <div class="slot"><span class="badge eve">夕方</span> ー</div>
+            <div class="slot"><span class="badge night">深夜</span> ー</div>
+          </td>
+        </tr>
+
+        <!-- 第2週（ダミー。必要に応じて繰り返しorJinjaで生成） -->
+        <tr>
+          <th class="sticky-left week-col">第2週</th>
+          <td colspan="7" class="placeholder">ここに第2週を表示（データで生成）</td>
+        </tr>
       </tbody>
     </table>
   </div>
 
+  <footer class="page-footer">
+    <small>横にスワイプでスクロールできます</small>
+  </footer>
 </body>
 </html>

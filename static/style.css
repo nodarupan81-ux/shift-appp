@@ -1,68 +1,227 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #f8f8f8 url("background.png") repeat;
+/* ベース */
+:root {
+  --border: #dfe3e8;
+  --bg: #ffffff;
+  --bg-alt: #fafbfc;
+  --head-bg: #ffffff;
+  --text: #0f172a;
+  --badge: #f1f5f9;
+  --radius: 8px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
   margin: 0;
-  padding: 0;
+  color: var(--text);
+  background: #f6f7f8;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Meiryo", sans-serif;
 }
 
-.container {
-  width: 95%;
-  margin: auto;
+/* ページヘッダ/フッタ */
+.page-header, .page-footer {
+  padding: 10px 12px;
 }
-
-.header {
-  background: #004080;
-  color: white;
-  padding: 10px;
-}
-
-.header .title {
+.page-header h1 {
   margin: 0;
+  font-size: clamp(16px, 4vw, 20px);
 }
 
-.nav a {
-  color: white;
-  margin-left: 10px;
-  text-decoration: none;
+/* 横スクロール領域 */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* iOSでヌルスクロール */
+  padding: 8px 12px 16px;
 }
 
-.calendar-nav {
-  margin: 15px 0;
-  text-align: center;
-}
-
-.calendar-nav a, .calendar-nav select, .calendar-nav button {
-  margin: 0 5px;
-}
-
+/* テーブルの見た目 */
 .shift-table {
   width: 100%;
-  border-collapse: collapse;
-  background: white;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  /* スマホで潰れないように最小幅を確保（列幅は後述のth,tdで固定） */
+  min-width: 720px;
+  table-layout: fixed;
 }
 
+/* 上部ボーダーを角丸に合わせる */
+.shift-table thead th:first-child {
+  border-top-left-radius: var(--radius);
+}
+.shift-table thead th:last-child {
+  border-top-right-radius: var(--radius);
+}
+
+/* セル共通 */
 .shift-table th,
 .shift-table td {
-  border: 1px solid #ccc;
-  padding: 4px;
-  vertical-align: top;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 10px;
   text-align: center;
+  vertical-align: top;
+  font-size: clamp(12px, 2.8vw, 14px);
+  line-height: 1.25;
+  background: #fff;
+  word-break: keep-all;
+  white-space: nowrap;
 }
 
-.week-label {
-  font-weight: bold;
-  background: #eef;
+/* 列幅（モバイルで見やすいよう少し広め） */
+.shift-table th:not(.week-col),
+.shift-table td { width: 120px; }
+.shift-table .week-col { width: 84px; min-width: 84px; }
+
+/* 偶数行の背景 */
+.shift-table tbody tr:nth-child(even) td {
+  background: var(--bg-alt);
 }
 
-.day-label {
-  font-weight: bold;
-  margin-bottom: 4px;
+/* sticky（上・左を固定） */
+.sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--head-bg);
+}
+.sticky-left {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--head-bg);
+  box-shadow: 1px 0 0 var(--border);
 }
 
-.shift-label {
-  font-weight: bold;
-  background: #f7f7f7;
-  margin-top: 4px;
-  padding: 2px;
-  border-bottom: 1px solid #ddd;
+/* 日付ヘッダとバッジ */
+.day-head {
+  font-weight: 600;
+  margin-bottom: 6px;
+  white-space: nowrap;
 }
+.save {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  margin-left: 4px;
+}
+
+.slot { 
+  text-align: left;
+  display: block;
+  padding: 6px 8px;
+  margin: 4px 0;
+  border: 1px dashed #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* シフト種別バッジ */
+.badge {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--badge);
+  margin-right: 6px;
+  border: 1px solid #e5e7eb;
+}
+.badge.dawn::before  { content: "🌅 "; }
+.badge.am::before    { content: "☀️ "; }
+.badge.pm::before    { content: "🌤 "; }
+.badge.eve::before   { content: "🌆 "; }
+.badge.night::before { content: "🌙 "; }
+
+/* プレースホルダー行（第2週以降のダミー） */
+.placeholder {
+  color: #64748b;
+  text-align: left;
+  padding: 14px;
+}
+
+/* 小さい端末での微調整 */
+@media (max-width: 380px) {
+  .shift-table th:not(.week-col),
+  .shift-table td { width: 110px; }
+  .shift-table { min-width: 680px; }
+}
+/* ===== スマホ最適化（～640px） ===== */
+@media (max-width: 640px) {
+  /* 横スクロールは維持しつつ、最小幅を少し縮める */
+  .shift-table { min-width: 640px; }
+
+  /* 列幅と余白をコンパクトに */
+  .shift-table th:not(.week-col),
+  .shift-table td { width: 100px; }
+  .shift-table .week-col { width: 72px; min-width: 72px; }
+
+  .shift-table th,
+  .shift-table td {
+    padding: 6px 6px;
+    font-size: 11px;        /* 全体フォントを小さめに */
+    line-height: 1.2;
+  }
+
+  /* 日付ヘッダ（保存済バッジ含む）を少し小さく */
+  .day-head { 
+    font-size: 12px; 
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
+  .save { 
+    font-size: 10px;
+    padding: 1px 5px;
+  }
+
+  /* 各スロットの余白を圧縮＆省略表示を強める */
+  .slot {
+    padding: 4px 6px;
+    margin: 3px 0;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;   /* 1行で収める */
+    border-radius: 5px;
+  }
+
+  /* バッジは絵文字だけ表示（文字は隠す）→省スペース */
+  .badge {
+    font-size: 0;          /* 早朝/午前…のテキストは隠す */
+    padding: 0;
+    border: none;
+    background: transparent;
+    margin-right: 6px;
+    vertical-align: -1px;
+  }
+  .badge::before {
+    font-size: 14px;       /* 絵文字だけ表示 */
+  }
+
+  /* sticky見出しの視認性（影を少し強める） */
+  .sticky-top {
+    box-shadow: 0 2px 0 rgba(15,23,42,.06);
+  }
+  .sticky-left {
+    box-shadow: 1px 0 0 rgba(15,23,42,.08);
+  }
+}
+
+/* さらに小さい端末（～380px）向けの微調整 */
+@media (max-width: 380px) {
+  .shift-table { min-width: 600px; }
+  .shift-table th:not(.week-col),
+  .shift-table td { width: 96px; }
+  .shift-table .week-col { width: 68px; min-width: 68px; }
+  .slot { padding: 3px 5px; margin: 2px 0; }
+  .badge::before { font-size: 13px; }
+}
+
