@@ -179,6 +179,7 @@ def view(store_id):
         store_id=store_id,
         employees=employees,
         prefill=schedules,
+        schedule=schedules,
         shifts=SHIFTS,
         shifts_labels=SHIFTS_LABELS,
         weekdays=WEEKDAYS,
@@ -248,6 +249,7 @@ def schedule(store_id):
         store_id=store_id,
         employees=employees,
         prefill=schedules,
+        schedule=schedules,
         shifts=SHIFTS,
         shifts_labels=SHIFTS_LABELS,
         weekdays=WEEKDAYS,
@@ -316,4 +318,5 @@ def logout():
         session.pop(f"is_admin_{sid}", None)
         session.pop(f"staff_authed_{sid}", None)
     return redirect(url_for("landing"))
+
 
