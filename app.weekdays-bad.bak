@@ -100,7 +100,7 @@ def is_staff_authed(store_id: str) -> bool:
 
 
 # ====== 逕ｻ髱｢蜈ｱ騾壹・繝槭せ繧ｿ ======
-WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
+WEEKDAYS = ["譛・, "轣ｫ", "豌ｴ", "譛ｨ", "驥・, "蝨・, "譌･"]
 SHIFTS = ["socho", "gozen", "gogo", "yugata", "shinya"]
 SHIFTS_LABELS = {
     "socho":  "譌ｩ譛・,
@@ -315,5 +315,4 @@ def go_store_root(store_id):
 # ====== 繝ｭ繝ｼ繧ｫ繝ｫ襍ｷ蜍慕畑 ======
 if __name__ == "__main__":
     app.run(debug=True)
-
 
