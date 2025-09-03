@@ -1,89 +1,152 @@
-﻿<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{{ store_name }} - {{ year }}年{{ month }}月 シフト編集</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=savebtn3">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ store_name }} - {{ year }}年{{ month }}月 シフト表</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=mobcard1">
+
+  <style>
+    /* このページ専用の最小追加（既存CSSと衝突しない範囲） */
+    .toolbar { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.5rem 0 1rem; }
+    .toolbar a, .toolbar button { white-space:nowrap; }
+
+    /* デスクトップ表（既存テーブル）全体 */
+    .pc-grid { width:100%; }
+
+    /* モバイル用カード */
+    .mobile-cards { display:none; }
+    .day-card { border:1px solid rgba(0,0,0,.2); border-radius:8px; padding:.6rem; margin:.6rem 0; background:#fff; }
+    .day-header { font-weight:700; margin-bottom:.25rem; display:flex; justify-content:space-between; }
+    .day-header .saved { font-size:.8rem; opacity:.6; }
+    .shift-line { display:flex; justify-content:space-between; padding:.18rem 0; border-top:1px solid rgba(0,0,0,.1); }
+    .shift-line:first-of-type { border-top:none; }
+    .shift-label { font-weight:600; margin-right:.5rem; }
+    .shift-names { text-align:right; }
+    .name-pill { display:inline-block; background:#f7f7f7; border:1px solid rgba(0,0,0,.15); border-radius:8px; padding:.12rem .38rem; margin-left:.25rem; }
+
+    /* 画面幅が狭いときはカード表示に自動切替 */
+    @media (max-width: 768px){
+      .pc-grid { display:none !important; }
+      .mobile-cards { display:block !important; }
+    }
+  </style>
 </head>
 <body>
-  <header class="page-header">
-    <h1>{{ store_name }} {{ year }}年{{ month }}月 シフト編集</h1>
-  </header>
+  <div class="container">
+    <h2 style="margin-top:1rem;">{{ store_name }} - {{ year }}年{{ month }}月 シフト表</h2>
 
-  <!-- フォーム開始：同じURLにPOST -->
-  <form method="post" action="">
-    <input type="hidden" name="store_id" value="{{ store_id }}">
-    <input type="hidden" name="year" value="{{ year }}">
-    <input type="hidden" name="month" value="{{ month }}">
+    <!-- ツールバー -->
+    <div class="toolbar">
+      <a href="{{ url_for('schedule' if is_admin else 'view', store_id=store_id, year=prev_year, month=prev_month) }}">« 前の月</a>
+      <a href="{{ url_for('schedule' if is_admin else 'view', store_id=store_id) }}">今月へ</a>
+      <a href="{{ url_for('schedule' if is_admin else 'view', store_id=store_id, year=next_year, month=next_month) }}">次の月 »</a>
 
-    <!-- 上部ツールバー（保存／戻る） -->
-    <div class="edit-toolbar">
-      <button type="submit" class="btn btn-primary">保存</button>
-      <a href="{{ url_for('landing') }}" class="btn">戻る</a>
+      <form method="get" action="{{ url_for('schedule' if is_admin else 'view', store_id=store_id) }}" style="display:inline-flex; gap:.25rem; align-items:center;">
+        <select name="year">
+          {% for y in year_options %}<option value="{{ y }}" {% if y==year %}selected{% endif %}>{{ y }}</option>{% endfor %}
+        </select>
+        <span>年</span>
+        <select name="month">
+          {% for m in month_options %}<option value="{{ m }}" {% if m==month %}selected{% endif %}>{{ m }}</option>{% endfor %}
+        </select>
+        <span>月</span>
+        <button type="submit">移動</button>
+      </form>
+
+      <div style="margin-left:auto;"></div>
+      {% if is_admin %}
+        <a href="{{ url_for('settings', store_id=store_id) }}">名簿・定員</a>
+        <a href="{{ url_for('logout') }}">ログアウト</a>
+      {% else %}
+        <a href="{{ url_for('login_admin', store_id=store_id, next=request.full_path) }}">管理者ログイン</a>
+        <a href="{{ url_for('staff_logout', store_id=store_id) }}">スタッフログアウト</a>
+      {% endif %}
     </div>
 
-    <div class="table-wrap" aria-label="シフト表 横スクロール領域">
-      <table class="shift-table" role="table" aria-label="シフト表">
+    <!-- ===== デスクトップ：従来の表（既存テンプレのまま） ===== -->
+    <div class="pc-grid">
+      <table class="shift-table">
         <thead>
           <tr>
-            <th class="sticky-left sticky-top week-col">週</th>
-            <th class="sticky-top">月</th>
-            <th class="sticky-top">火</th>
-            <th class="sticky-top">水</th>
-            <th class="sticky-top">木</th>
-            <th class="sticky-top">金</th>
-            <th class="sticky-top">土</th>
-            <th class="sticky-top">日</th>
+            <th class="week-label">週</th>
+            {% for wd in weekdays %}<th>{{ wd }}</th>{% endfor %}
           </tr>
         </thead>
         <tbody>
-          {% for week, days in schedule.items() %}
-          <tr>
-            <th class="sticky-left week-col">{{ week }}</th>
-            {% for day, shifts in days.items() %}
-            <td>
-              <div class="day-head">{{ day }}日</div>
-
-              {% for slot in ["早朝","午前","午後","夕方","深夜"] %}
-              <div class="slot">
-                <span class="badge
-                  {% if slot=='早朝' %}dawn
-                  {% elif slot=='午前' %}am
-                  {% elif slot=='午後' %}pm
-                  {% elif slot=='夕方' %}eve
-                  {% else %}night{% endif %}">
-                  {{ slot }}
-                </span>
-
-                <select name="shifts[{{ week }}][{{ day }}][{{ slot }}]">
-                  <option value="">ー</option>
-                  {% for staff in staff_list %}
-                    <option value="{{ staff }}" {% if shifts.get(slot) == staff %}selected{% endif %}>
-                      {{ staff }}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
+          {% for week in weeks %}
+            <tr>
+              <td class="week-label">第{{ loop.index }}週</td>
+              {% for day in week %}
+                <td>
+                  {% if day==0 %}
+                    &nbsp;
+                  {% else %}
+                    {% set day_key = day|string %}
+                    <div class="day-label">
+                      <div>{{ day }}日</div>
+                      {% if prefill.get(day_key) %}<div style="font-size:.8rem; opacity:.6;">保存済</div>{% endif %}
+                    </div>
+                    {% for s in shifts %}
+                      {% set label = shifts_labels.get(s, s) %}
+                      {% set cur = prefill.get(day_key, {}).get(s, ["",""]) %}
+                      <div class="shift-label">{{ label }}</div>
+                      <div class="shift-slot">
+                        {% if is_admin %}
+                          <select name="day_{{ day }}_{{ s }}_1">
+                            <option value="">－</option>
+                            {% for emp in employees %}<option value="{{ emp }}" {% if cur and cur[0]==emp %}selected{% endif %}>{{ emp }}</option>{% endfor %}
+                          </select>
+                          <select name="day_{{ day }}_{{ s }}_2" style="margin-left:.25rem;">
+                            <option value="">－</option>
+                            {% for emp in employees %}<option value="{{ emp }}" {% if cur and cur[1]==emp %}selected{% endif %}>{{ emp }}</option>{% endfor %}
+                          </select>
+                        {% else %}
+                          {% if cur and cur[0] %}<span class="name-pill">{{ cur[0] }}</span>{% else %}<span style="opacity:.5;">－</span>{% endif %}
+                          {% if cur and cur[1] %}<span class="name-pill">{{ cur[1] }}</span>{% endif %}
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                </td>
               {% endfor %}
-            </td>
-            {% endfor %}
-          </tr>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
 
-    <!-- 下部ツールバー（保存ボタンもう一つ） -->
-    <div class="edit-toolbar sticky-footer">
-      <button type="submit" class="btn btn-primary">保存</button>
+    <!-- ===== モバイル：日別カード（自動切替） ===== -->
+    <div class="mobile-cards">
+      {% for week in weeks %}
+        {% for day in week %}
+          {% if day != 0 %}
+            {% set day_key = day|string %}
+            <div class="day-card">
+              <div class="day-header">
+                <span>{{ day }}日</span>
+                {% if prefill.get(day_key) %}<span class="saved">保存済</span>{% endif %}
+              </div>
+              {% for s in shifts %}
+                {% set label = shifts_labels.get(s, s) %}
+                {% set cur = prefill.get(day_key, {}).get(s, ["",""]) %}
+                <div class="shift-line">
+                  <span class="shift-label">{{ label }}</span>
+                  <span class="shift-names">
+                    {% if cur and cur[0] %}<span class="name-pill">{{ cur[0] }}</span>{% else %}－{% endif %}
+                    {% if cur and cur[1] %}<span class="name-pill">{{ cur[1] }}</span>{% endif %}
+                  </span>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
     </div>
-  </form>
 
-  <footer class="page-footer">
-    <small>横にスワイプでスクロールできます</small>
-  </footer>
+    <div style="margin-top:1rem; font-size:.85rem; opacity:.7;">
+      最終表示: {{ now.strftime('%Y-%m-%d') }}
+    </div>
+  </div>
 </body>
 </html>
-<!-- MARK: savebtn3 -->
-
