@@ -1,110 +1,140 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
+  <title>シフト編集 | {{ store_name }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ store_name }} - {{ year }}年{{ month }}月 シフト表</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=mobcard1">
-
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    /* このページ専用の最小追加（既存CSSと衝突しない範囲） */
-    .toolbar { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.5rem 0 1rem; }
-    .toolbar a, .toolbar button { white-space:nowrap; }
-
-    /* デスクトップ表（既存テーブル）全体 */
-    .pc-grid { width:100%; }
-
-    /* モバイル用カード */
-    .mobile-cards { display:none; }
-    .day-card { border:1px solid rgba(0,0,0,.2); border-radius:8px; padding:.6rem; margin:.6rem 0; background:#fff; }
-    .day-header { font-weight:700; margin-bottom:.25rem; display:flex; justify-content:space-between; }
-    .day-header .saved { font-size:.8rem; opacity:.6; }
-    .shift-line { display:flex; justify-content:space-between; padding:.18rem 0; border-top:1px solid rgba(0,0,0,.1); }
-    .shift-line:first-of-type { border-top:none; }
-    .shift-label { font-weight:600; margin-right:.5rem; }
-    .shift-names { text-align:right; }
-    .name-pill { display:inline-block; background:#f7f7f7; border:1px solid rgba(0,0,0,.15); border-radius:8px; padding:.12rem .38rem; margin-left:.25rem; }
-
-    /* 画面幅が狭いときはカード表示に自動切替 */
-    @media (max-width: 768px){
-      .pc-grid { display:none !important; }
-      .mobile-cards { display:block !important; }
+    /* 最低限の保険（既存CSSの上書きが必要なとき用） */
+    .container{max-width:960px;margin:0 auto;padding:0 12px;}
+    .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:12px 0;flex-wrap:wrap;}
+    .toolbar .right{display:flex;gap:8px;align-items:center;}
+    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    table{border-collapse:collapse;width:100%;min-width:960px;}
+    th,td{border:1px solid #e5e7eb;padding:6px 8px;vertical-align:top;}
+    th{background:#f7fafc;text-align:center;}
+    .day-cell{min-width:160px}
+    .shift-block{margin:4px 0;display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+    .day-header{font-weight:700;margin-bottom:4px;}
+    .saved{color:#16a34a;font-weight:600;font-size:12px;margin-left:6px;}
+    .flash{margin:12px 0;padding:10px 12px;border-radius:8px;}
+    .flash.success{background:#e6ffed;border:1px solid #b7ebc6;}
+    .flash.error{background:#ffecec;border:1px solid #ffb5b5;}
+    .save-bar{
+      position:sticky;bottom:0;z-index:50;background:rgba(255,255,255,0.96);
+      border-top:1px solid #e5e7eb;padding:10px 12px;backdrop-filter:saturate(180%) blur(4px);
+    }
+    .save-bar .container{display:flex;justify-content:flex-end;}
+    .btn{display:inline-block;padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font:inherit;}
+    .btn-primary{border-color:#2563eb;background:#3b82f6;color:#fff;font-weight:600;}
+    .btn-primary:hover{filter:brightness(.97);}
+    @media (max-width:640px){
+      .save-bar{position:fixed;left:0;right:0}
+      input[type="text"],input[type="password"],select,button,.btn{width:100%;box-sizing:border-box;padding:12px 14px;font-size:16px;}
+      .shift-block{grid-template-columns:1fr}
+      table{min-width:720px;}
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2 style="margin-top:1rem;">{{ store_name }} - {{ year }}年{{ month }}月 シフト表</h2>
 
-    <!-- ツールバー -->
+<div class="container">
+  <h1>シフト編集（{{ year }}年{{ month }}月）</h1>
+
+  {# フラッシュメッセージ表示 #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="post" action="{{ url_for('schedule', store_id=store_id) }}">
+    <input type="hidden" name="year"  value="{{ year }}">
+    <input type="hidden" name="month" value="{{ month }}">
+
     <div class="toolbar">
-      <a href="{{ url_for('schedule' if is_admin else 'view', store_id=store_id, year=prev_year, month=prev_month) }}">« 前の月</a>
-      <a href="{{ url_for('schedule' if is_admin else 'view', store_id=store_id) }}">今月へ</a>
-      <a href="{{ url_for('schedule' if is_admin else 'view', store_id=store_id, year=next_year, month=next_month) }}">次の月 »</a>
-
-      <form method="get" action="{{ url_for('schedule' if is_admin else 'view', store_id=store_id) }}" style="display:inline-flex; gap:.25rem; align-items:center;">
-        <select name="year">
-          {% for y in year_options %}<option value="{{ y }}" {% if y==year %}selected{% endif %}>{{ y }}</option>{% endfor %}
-        </select>
-        <span>年</span>
-        <select name="month">
-          {% for m in month_options %}<option value="{{ m }}" {% if m==month %}selected{% endif %}>{{ m }}</option>{% endfor %}
-        </select>
-        <span>月</span>
-        <button type="submit">移動</button>
-      </form>
-
-      <div style="margin-left:auto;"></div>
-      {% if is_admin %}
-        <a href="{{ url_for('settings', store_id=store_id) }}">名簿・定員</a>
-        <a href="{{ url_for('logout') }}">ログアウト</a>
-      {% else %}
-        <a href="{{ url_for('login_admin', store_id=store_id, next=request.full_path) }}">管理者ログイン</a>
-        <a href="{{ url_for('staff_logout', store_id=store_id) }}">スタッフログアウト</a>
-      {% endif %}
+      <div class="left">
+        <strong>{{ store_name }}</strong>
+      </div>
+      <div class="right">
+        <div>
+          <a class="btn" href="{{ url_for('schedule', store_id=store_id, year=prev_year, month=prev_month) }}">← 前月</a>
+        </div>
+        <div>
+          <select onchange="location.href=this.value">
+            {% for y in year_options %}
+              {% for m in month_options %}
+                <option value="{{ url_for('schedule', store_id=store_id, year=y, month=m) }}"
+                  {% if y==year and m==month %}selected{% endif %}>
+                  {{ y }}年 {{ m }}月
+                </option>
+              {% endfor %}
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <a class="btn" href="{{ url_for('schedule', store_id=store_id, year=next_year, month=next_month) }}">次月 →</a>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary">保存する</button>
+        </div>
+      </div>
     </div>
 
-    <!-- ===== デスクトップ：従来の表（既存テンプレのまま） ===== -->
-    <div class="pc-grid">
-      <table class="shift-table">
+    <div class="table-wrap">
+      <table>
         <thead>
           <tr>
-            <th class="week-label">週</th>
-            {% for wd in weekdays %}<th>{{ wd }}</th>{% endfor %}
+            <th style="width:80px">週</th>
+            {% for d in range(1,8) %}
+              <th>日付 / シフト</th>
+            {% endfor %}
           </tr>
         </thead>
         <tbody>
-          {% for week in weeks %}
+          {# weeks は calendar.Calendar(...).monthdayscalendar の返り値（各週=7要素, 月外は0） #}
+          {% for w_idx, week in enumerate(weeks, start=1) %}
             <tr>
-              <td class="week-label">第{{ loop.index }}週</td>
+              <th>第{{ w_idx }}週</th>
               {% for day in week %}
-                <td>
-                  {% if day==0 %}
-                    &nbsp;
+                <td class="day-cell">
+                  {% if day == 0 %}
+                    <!-- 月外 -->
+                    <div class="day-header" style="opacity:.5">—</div>
                   {% else %}
                     {% set day_key = day|string %}
-                    <div class="day-label">
-                      <div>{{ day }}日</div>
-                      {% if prefill.get(day_key) %}<div style="font-size:.8rem; opacity:.6;">保存済</div>{% endif %}
+                    <div class="day-header">
+                      {{ day }}日
+                      {% if prefill.get(day_key) %}
+                        <span class="saved">保存済</span>
+                      {% endif %}
                     </div>
+
                     {% for s in shifts %}
-                      {% set label = shifts_labels.get(s, s) %}
-                      {% set cur = prefill.get(day_key, {}).get(s, ["",""]) %}
-                      <div class="shift-label">{{ label }}</div>
-                      <div class="shift-slot">
-                        {% if is_admin %}
+                      {% set current = prefill.get(day_key, {}).get(s, ["",""]) %}
+                      <div class="shift-block">
+                        <label>
+                          {{ shifts_labels[s] }}（1）
                           <select name="day_{{ day }}_{{ s }}_1">
-                            <option value="">－</option>
-                            {% for emp in employees %}<option value="{{ emp }}" {% if cur and cur[0]==emp %}selected{% endif %}>{{ emp }}</option>{% endfor %}
+                            <option value=""></option>
+                            {% for emp in employees %}
+                              <option value="{{ emp }}" {% if current[0]==emp %}selected{% endif %}>{{ emp }}</option>
+                            {% endfor %}
                           </select>
-                          <select name="day_{{ day }}_{{ s }}_2" style="margin-left:.25rem;">
-                            <option value="">－</option>
-                            {% for emp in employees %}<option value="{{ emp }}" {% if cur and cur[1]==emp %}selected{% endif %}>{{ emp }}</option>{% endfor %}
+                        </label>
+                        <label>
+                          {{ shifts_labels[s] }}（2）
+                          <select name="day_{{ day }}_{{ s }}_2">
+                            <option value=""></option>
+                            {% for emp in employees %}
+                              <option value="{{ emp }}" {% if current[1]==emp %}selected{% endif %}>{{ emp }}</option>
+                            {% endfor %}
                           </select>
-                        {% else %}
-                          {% if cur and cur[0] %}<span class="name-pill">{{ cur[0] }}</span>{% else %}<span style="opacity:.5;">－</span>{% endif %}
-                          {% if cur and cur[1] %}<span class="name-pill">{{ cur[1] }}</span>{% endif %}
-                        {% endif %}
+                        </label>
                       </div>
                     {% endfor %}
                   {% endif %}
@@ -116,115 +146,14 @@
       </table>
     </div>
 
-    <!-- ===== モバイル：日別カード（自動切替） ===== -->
-    <div class="mobile-cards">
-      {% for week in weeks %}
-        {% for day in week %}
-          {% if day != 0 %}
-            {% set day_key = day|string %}
-            <div class="day-card">
-              <div class="day-header">
-                <span>{{ day }}日</span>
-                {% if prefill.get(day_key) %}<span class="saved">保存済</span>{% endif %}
-              </div>
-              {% for s in shifts %}
-                {% set label = shifts_labels.get(s, s) %}
-                {% set cur = prefill.get(day_key, {}).get(s, ["",""]) %}
-                <div class="shift-line">
-                  <span class="shift-label">{{ label }}</span>
-                  <span class="shift-names">
-                    {% if cur and cur[0] %}<span class="name-pill">{{ cur[0] }}</span>{% else %}－{% endif %}
-                    {% if cur and cur[1] %}<span class="name-pill">{{ cur[1] }}</span>{% endif %}
-                  </span>
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endfor %}
-      {% endfor %}
+    <!-- 下部固定の保存バー -->
+    <div class="save-bar">
+      <div class="container">
+        <button type="submit" class="btn btn-primary">保存する</button>
+      </div>
     </div>
-
-    <div style="margin-top:1rem; font-size:.85rem; opacity:.7;">
-      最終表示: {{ now.strftime('%Y-%m-%d') }}
-    </div>
-  </div>
-</body>{# ====== ここから追記：保存バー＋JS ====== #}
-<!-- 下部固定の保存バー（どの端末でも常に表示） -->
-<div class="save-bar">
-  <div class="container">
-    <button type="button" class="btn btn-primary" id="saveScheduleBtn">保存する</button>
-  </div>
+  </form>
 </div>
 
-<script>
-/*
-  保存ボタンは“フォームが無くても”動きます。
-  ページ内の <input>/<select>/<textarea> をすべて収集して
-  /<store_id>/schedule に POST します。
-  既存の name 属性をそのまま送るので、サーバ側の処理はそのまま使えます。
-*/
-(function () {
-  const btn = document.getElementById('saveScheduleBtn');
-  if (!btn) return;
-
-  const postUrl = "{{ url_for('schedule', store_id=store_id) }}";
-
-  function collectFormData() {
-    const fd = new FormData();
-    // 年月はサーバ側で使うので送る（テンプレに渡っている値をそのまま）
-    fd.append('year',  String({{ year }}));
-    fd.append('month', String({{ month }}));
-
-    // 画面上の全ての input/select/textarea を集める
-    const fields = document.querySelectorAll('input, select, textarea');
-    fields.forEach(el => {
-      if (!el.name) return;              // nameがない要素は無視
-      if (el.type === 'checkbox') {
-        if (el.checked) fd.append(el.name, el.value || 'on');
-      } else if (el.type === 'radio') {
-        if (el.checked) fd.append(el.name, el.value);
-      } else {
-        fd.append(el.name, el.value ?? '');
-      }
-    });
-    return fd;
-  }
-
-  async function saveSchedule() {
-    btn.disabled = true;
-    btn.textContent = '保存中…';
-
-    try {
-      const res = await fetch(postUrl, {
-        method: 'POST',
-        body: collectFormData(),
-        // FlaskのCSRFを使っていない前提。使っている場合はヘッダ等を追加
-      });
-
-      // リダイレクトあり/なし両対応：成功ならそのまま遷移 or リロード
-      if (res.redirected) {
-        window.location.href = res.url;
-        return;
-      }
-
-      if (res.ok) {
-        // 保存成功のフィードバック（フラッシュがあればリロードして表示）
-        location.reload();
-      } else {
-        alert('保存に失敗しました（HTTP ' + res.status + '）');
-      }
-    } catch (e) {
-      console.error(e);
-      alert('保存中にエラーが発生しました。ネットワークをご確認ください。');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '保存する';
-    }
-  }
-
-  btn.addEventListener('click', saveSchedule);
-})();
-</script>
-{# ====== 追記ここまで ====== #}
-
+</body>
 </html>
