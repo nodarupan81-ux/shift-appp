@@ -1,117 +1,62 @@
 ﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <title>繧ｷ繝輔ヨ陦ｨ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ store_name }} - {{ year }}年 {{ month }}月 シフト表</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Arial, sans-serif; margin: 24px; }
+    .header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .title { font-size: 1.25rem; font-weight: 700; }
+    .nav { display: flex; gap: 8px; }
+    .btn {
+      display: inline-block; padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; text-decoration: none; color: #222;
+      background: #f7f7f7;
+    }
+    .btn:hover { background: #eee; }
+    table { border-collapse: collapse; width: 100%; max-width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; white-space: nowrap; }
+    th { background: #fafafa; }
+    .name { text-align: left; white-space: normal; }
+    .subtle { color: #666; font-weight: 500; }
+    .grid { overflow-x: auto; }
+  </style>
 </head>
 <body>
-  <header class="page-header">
-    <h1>繧ｷ繝輔ヨ陦ｨ</h1>
-  </header>
+  <div class="header">
+    <div class="title">
+      {{ store_name }} <span class="subtle">- {{ year }}年 {{ month }}月 シフト表</span>
+    </div>
+    <div class="nav">
+      <a class="btn" href="{{ url_for('prev_month', year=year, month=month) }}">&laquo; 前月</a>
+      <a class="btn" href="{{ url_for('index') }}">今月へ</a>
+      <a class="btn" href="{{ url_for('next_month', year=year, month=month) }}">翌月 &raquo;</a>
+    </div>
+  </div>
 
-  <!-- 讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｮ繝ｩ繝・ヱ -->
-  <div class="table-wrap" aria-label="繧ｷ繝輔ヨ陦ｨ 讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ鬆伜沺">
-    <!-- 譌｢蟄倥・繝・・繝悶Ν縺ｫ霑代＞讒矩縲ょｿ・ｦ√↓蠢懊§縺ｦJinja縺ｮ繝ｫ繝ｼ繝励ｒ蟾ｮ縺苓ｾｼ繧薙〒縺上□縺輔＞ -->
-    <table class="shift-table" role="table" aria-label="繧ｷ繝輔ヨ陦ｨ">
+  <div class="grid">
+    <table>
       <thead>
         <tr>
-          <!-- 蟾ｦ遶ｯ縺ｮ蛻暦ｼ磯ｱ・峨ｒ蝗ｺ螳・-->
-          <th class="sticky-left sticky-top week-col">騾ｱ</th>
-          <!-- 譖懈律繝倥ャ繝繝ｼ繧剃ｸ企Κ蝗ｺ螳・-->
-          <th class="sticky-top">譛・/th>
-          <th class="sticky-top">轣ｫ</th>
-          <th class="sticky-top">豌ｴ</th>
-          <th class="sticky-top">譛ｨ</th>
-          <th class="sticky-top">驥・/th>
-          <th class="sticky-top">蝨・/th>
-          <th class="sticky-top">譌･</th>
+          <th>名前</th>
+          {# まずは 1〜7日を例示。後で1ヶ月分(28〜31日)へ拡張しやすい作りに。 #}
+          {% for d in days %}
+            <th>{{ month }}/{{ d }}</th>
+          {% endfor %}
         </tr>
       </thead>
-
       <tbody>
-        <!-- 隨ｬ1騾ｱ -->
-        <tr>
-          <th class="sticky-left week-col">隨ｬ1騾ｱ</th>
-          <td>
-            <div class="day-head">1(譌･) <span class="save">菫晏ｭ俶ｸ・/span></div>
-            <div class="slot"><span class="badge dawn">譌ｩ譛・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge am">蜊亥燕</span> 繝ｼ</div>
-            <div class="slot"><span class="badge pm">蜊亥ｾ・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge eve">螟墓婿</span> 繝ｼ</div>
-            <div class="slot"><span class="badge night">豺ｱ螟・/span> 繝ｼ</div>
-          </td>
-          <td>
-            <div class="day-head">2(譛・ <span class="save">菫晏ｭ俶ｸ・/span></div>
-            <div class="slot"><span class="badge dawn">譌ｩ譛・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge am">蜊亥燕</span> 髟ｷ繝・/div>
-            <div class="slot"><span class="badge pm">蜊亥ｾ・/span> 繧｢</div>
-            <div class="slot"><span class="badge eve">螟墓婿</span> ・・/div>
-            <div class="slot"><span class="badge night">豺ｱ螟・/span> 繝ｼ</div>
-          </td>
-          <td>
-            <div class="day-head">3(轣ｫ) <span class="save">菫晏ｭ俶ｸ・/span></div>
-            <div class="slot"><span class="badge dawn">譌ｩ譛・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge am">蜊亥燕</span> 繝・/div>
-            <div class="slot"><span class="badge pm">蜊亥ｾ・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge eve">螟墓婿</span> 蠎・/div>
-            <div class="slot"><span class="badge night">豺ｱ螟・/span> 繝ｼ</div>
-          </td>
-          <td>
-            <div class="day-head">4(豌ｴ) <span class="save">菫晏ｭ俶ｸ・/span></div>
-            <div class="slot"><span class="badge dawn">譌ｩ譛・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge am">蜊亥燕</span> 繝ｼ</div>
-            <div class="slot"><span class="badge pm">蜊亥ｾ・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge eve">螟墓婿</span> 繝ｼ</div>
-            <div class="slot"><span class="badge night">豺ｱ螟・/span> 繝ｼ</div>
-          </td>
-          <td>
-            <div class="day-head">5(譛ｨ) <span class="save">菫晏ｭ俶ｸ・/span></div>
-            <div class="slot"><span class="badge dawn">譌ｩ譛・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge am">蜊亥燕</span> 繝ｼ</div>
-            <div class="slot"><span class="badge pm">蜊亥ｾ・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge eve">螟墓婿</span> 繝ｼ</div>
-            <div class="slot"><span class="badge night">豺ｱ螟・/span> 繝槭ロ<br>繧｢繝ｩ縺ｲ繧・≧</div>
-          </td>
-          <td>
-            <div class="day-head">6(驥・ <span class="save">菫晏ｭ俶ｸ・/span></div>
-            <div class="slot"><span class="badge dawn">譌ｩ譛・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge am">蜊亥燕</span> 繝ｼ</div>
-            <div class="slot"><span class="badge pm">蜊亥ｾ・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge eve">螟墓婿</span> 繝ｼ</div>
-            <div class="slot"><span class="badge night">豺ｱ螟・/span> 繝ｼ</div>
-          </td>
-          <td>
-            <div class="day-head">7(蝨・ <span class="save">菫晏ｭ俶ｸ・/span></div>
-            <div class="slot"><span class="badge dawn">譌ｩ譛・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge am">蜊亥燕</span> 繝ｼ</div>
-            <div class="slot"><span class="badge pm">蜊亥ｾ・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge eve">螟墓婿</span> 繝ｼ</div>
-            <div class="slot"><span class="badge night">豺ｱ螟・/span> 繝ｼ</div>
-          </td>
-          <td>
-            <div class="day-head">8(譌･) <span class="save">菫晏ｭ俶ｸ・/span></div>
-            <div class="slot"><span class="badge dawn">譌ｩ譛・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge am">蜊亥燕</span> 繝ｼ</div>
-            <div class="slot"><span class="badge pm">蜊亥ｾ・/span> 繝ｼ</div>
-            <div class="slot"><span class="badge eve">螟墓婿</span> 繝ｼ</div>
-            <div class="slot"><span class="badge night">豺ｱ螟・/span> 繝ｼ</div>
-          </td>
-        </tr>
-
-        <!-- 隨ｬ2騾ｱ・医ム繝溘・縲ょｿ・ｦ√↓蠢懊§縺ｦ郢ｰ繧願ｿ斐＠orJinja縺ｧ逕滓・・・-->
-        <tr>
-          <th class="sticky-left week-col">隨ｬ2騾ｱ</th>
-          <td colspan="7" class="placeholder">縺薙％縺ｫ隨ｬ2騾ｱ繧定｡ｨ遉ｺ・医ョ繝ｼ繧ｿ縺ｧ逕滓・・・/td>
-        </tr>
+        {% for row in shifts %}
+          <tr>
+            <td class="name">{{ row.name }}</td>
+            {% for d in days %}
+              <td>{{ row["d" ~ d] }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>
 
-  <footer class="page-footer">
-    <small>讓ｪ縺ｫ繧ｹ繝ｯ繧､繝励〒繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｧ縺阪∪縺・/small>
-  </footer>
 </body>
 </html>
-

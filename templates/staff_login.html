@@ -1,48 +1,19 @@
 ﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>{{ store_name }} | 蠕捺･ｭ蜩｡繝ｭ繧ｰ繧､繝ｳ</title>
+  <meta charset="utf-8" />
+  <title>スタッフログイン</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-    .login-card{
-      max-width:420px;margin:48px auto;background:rgba(255,255,255,.95);
-      border:1px solid #e5e7eb;border-radius:12px;padding:20px;
-      box-shadow:0 2px 8px rgba(0,0,0,.06);
-    }
-    .login-card h2{margin:0 0 12px;font-size:18px}
-    .login-card p{margin:0 0 10px;color:#555}
-    .login-card input[type="password"]{
-      width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px
-    }
-    .login-card .error{color:#b91c1c;background:#fee2e2;border:1px solid #fecaca;padding:8px 10px;border-radius:8px;margin-bottom:10px}
-    .login-card .actions{margin-top:10px;text-align:right}
-    .btn{padding:10px 14px;border-radius:10px;border:1px solid #2563eb;background:#3b82f6;color:#fff;font-weight:700;cursor:pointer}
-    .btn:hover{background:#2563eb}
-    .small{font-size:12px;color:#6b7280;margin-top:8px}
-  </style>
 </head>
 <body>
-  <div class="login-card">
-    <h2>蠕捺･ｭ蜩｡繝ｭ繧ｰ繧､繝ｳ</h2>
-    <p>{{ store_name }} 縺ｮ繧ｷ繝輔ヨ髢ｲ隕ｧ縺ｫ縺ｯ繝代せ繝ｯ繝ｼ繝峨′蠢・ｦ√〒縺吶・/p>
+  <h1>{{ store_name }} スタッフログイン</h1>
 
-    {% if error %}
-      <div class="error">{{ error }}</div>
-    {% endif %}
+  <form method="post">
+    <label for="password">パスワード:</label>
+    <input type="password" name="password" id="password" required>
+    <button type="submit">ログイン</button>
+  </form>
 
-    <form method="post" action="{{ url_for('staff_login', store_id=store_id, next=request.args.get('next')) }}">
-      <input type="password" name="password" placeholder="髢ｲ隕ｧ逕ｨ繝代せ繝ｯ繝ｼ繝・ required>
-      <div class="actions">
-        <button class="btn" type="submit">繝ｭ繧ｰ繧､繝ｳ</button>
-      </div>
-    </form>
-
-    <div class="small">
-      蠎苓・繝医ャ繝励∈謌ｻ繧具ｼ・
-      <a href="{{ url_for('landing') }}">蠎苓・驕ｸ謚・/a>
-    </div>
-  </div>
+  <p><a href="{{ url_for('landing') }}">戻る</a></p>
 </body>
 </html>
-
