@@ -1,23 +1,41 @@
-﻿from flask import Flask, render_template, request, redirect, url_for, session, abort, flash
-import os, json, calendar
+﻿# -*- coding: utf-8 -*-
+# Shift アプリ - 完全版 app.py
+#
+# ポイント
+# - ログイン：フォーム名を username / password に統一。next パラメータで遷移。
+# - シフト保存：POST フィールド day_<日>_<shift>_<1|2> を正規表現で総なめにして保存（堅牢）。
+# - 読み込み：旧データ {"d": {...}} でも自動で正規化して表示。
+# - テンプレートと整合：login_admin.html / staff_login.html / schedule.html と噛み合う。
+
+from flask import Flask, render_template, request, redirect, url_for, session, abort, flash
+import os
+import json
+import calendar
 import datetime as dt
 import re
 from pathlib import Path
-from typing import Dict, Any, List
 
+# ==========================================================
+# Flask 基本設定
+# ==========================================================
 app = Flask(__name__)
+
+# セッション用シークレット
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "CHANGE_ME_TO_A_RANDOM_STRING")
 
-# ====== 店舗設定 ======
+# ==========================================================
+# アプリ固有設定
+# ==========================================================
 SITE_NAME = "若葉2丁目店"
-DEFAULT_STORE_ID = os.environ.get("DEFAULT_STORE_ID", "wakaba2")  # ← / はここへ飛ばします
 
-# ====== 管理者/スタッフ ======
+# 管理者アカウント
 ADMIN_USER = "365836"
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin")
+
+# スタッフ用パスワード
 STAFF_PASSWORD = os.environ.get("STAFF_PASSWORD", "test123")
 
-# ====== シフト定義 ======
+# シフト定義
 SHIFTS = ["early", "morning", "afternoon", "evening", "night"]
 SHIFTS_LABELS = {
     "early": "早朝",
@@ -26,32 +44,41 @@ SHIFTS_LABELS = {
     "evening": "夕方",
     "night": "深夜",
 }
-LABEL_TO_KEY = {v: k for k, v in SHIFTS_LABELS.items()}
 WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
 
+# データ格納先
 DATA_DIR = Path("data")
 
-# ---------- 共通ユーティリティ ----------
+# ==========================================================
+# ユーティリティ
+# ==========================================================
 def store_name(store_id: str) -> str:
     return SITE_NAME
+
+def store_exists(store_id: str) -> bool:
+    # 店舗IDの妥当性チェックを入れる場合はここを実装
+    return True
 
 def require_store_or_404(store_id: str):
     if not store_exists(store_id):
         abort(404)
 
-def store_exists(store_id: str) -> bool:
-    return True
+def is_admin(store_id: str) -> bool:
+    return bool(session.get("is_admin"))
 
 def prev_next_year_month(year: int, month: int):
     prev_y, prev_m = year, month - 1
     next_y, next_m = year, month + 1
     if prev_m == 0:
-        prev_m, prev_y = 12, year - 1
+        prev_m = 12
+        prev_y -= 1
     if next_m == 13:
-        next_m, next_y = 1, year + 1
+        next_m = 1
+        next_y += 1
     return prev_y, prev_m, next_y, next_m
 
 def load_employees(store_id: str):
+    # 優先：data/<store_id>/employees.json、なければ data/employees.json
     path_primary = DATA_DIR / store_id / "employees.json"
     path_fallback = DATA_DIR / "employees.json"
     p = path_primary if path_primary.exists() else path_fallback
@@ -81,115 +108,106 @@ def month_bounds(year: int, month: int):
     return first, last
 
 def build_calendar(year: int, month: int):
+    # monthdayscalendar: 各週が 7 要素（0=月外、1..=日付）を持つ配列
     cal = calendar.Calendar(firstweekday=0)
     return cal.monthdayscalendar(year, month)
 
-def is_admin(store_id: str):
-    return session.get("is_admin")
-
-# ---------- 保存形式の正規化 ----------
-def _norm_pair(v: Any) -> List[str]:
-    if isinstance(v, list) and len(v) >= 2:
-        return [str(v[0] or ""), str(v[1] or "")]
-    if isinstance(v, list) and len(v) == 1:
-        return [str(v[0] or ""), ""]
-    if isinstance(v, str):
-        return [v, ""]
-    return ["", ""]
-
-def _normalize_schedule_dict(raw: Dict[str, Any]) -> Dict[str, Dict[str, List[str]]]:
-    if not isinstance(raw, dict):
-        return {}
-    if "d" in raw and isinstance(raw["d"], dict):
-        raw = raw["d"]
-    out: Dict[str, Dict[str, List[str]]] = {}
-    for day_key, shifts_dict in raw.items():
-        if not isinstance(shifts_dict, dict):
-            continue
-        day_out: Dict[str, List[str]] = {}
-        for k, v in shifts_dict.items():
-            if k in SHIFTS:
-                day_out[k] = _norm_pair(v)
-            elif k in LABEL_TO_KEY:  # 日本語→英語
-                day_out[LABEL_TO_KEY[k]] = _norm_pair(v)
-        if day_out:
-            out[str(day_key)] = day_out
-    return out
-
-# ================= 路線 =================
-
-# / はそのまま当月のスケジュールへリダイレクト（テンプレは使わない）
+# ==========================================================
+# ルート
+# ==========================================================
 @app.route("/")
 def index():
-    today = dt.date.today()
-    return redirect(url_for("schedule", store_id=DEFAULT_STORE_ID, year=today.year, month=today.month))
+    return render_template("index.html", site_name=SITE_NAME)
 
+# ---- 管理者ログイン ----
 @app.route("/<store_id>/login-admin", methods=["GET", "POST"])
 def login_admin(store_id):
     if request.method == "POST":
-        if request.form.get("userid") == ADMIN_USER and request.form.get("password") == ADMIN_PASSWORD:
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
+        # next は form 優先 → query → 既定
+        next_url = request.form.get("next") or request.args.get("next") or url_for("view", store_id=store_id)
+
+        if username == ADMIN_USER and password == ADMIN_PASSWORD:
             session["is_admin"] = True
             flash("管理者ログイン成功", "success")
-            next_url = request.args.get("next") or url_for("view", store_id=store_id)
             return redirect(next_url)
-        flash("ユーザーIDまたはパスワードが違います", "error")
-    return render_template("login_admin.html")
 
+        flash("ユーザー名またはパスワードが違います", "error")
+
+    return render_template("login_admin.html", store_id=store_id, store_name=store_name(store_id))
+
+# ---- ログアウト ----
 @app.route("/<store_id>/logout")
 def logout(store_id):
     session.clear()
     return redirect(url_for("login_admin", store_id=store_id))
 
+# ---- スタッフログイン ----
 @app.route("/<store_id>/staff-login", methods=["GET", "POST"])
 def staff_login(store_id):
     if request.method == "POST":
-        if request.form.get("password") == STAFF_PASSWORD:
+        pwd = request.form.get("password", "")
+        next_url = request.form.get("next") or request.args.get("next") or url_for("view", store_id=store_id)
+        if pwd == STAFF_PASSWORD:
             session["is_staff"] = True
             flash("スタッフログイン成功", "success")
-            next_url = request.args.get("next") or url_for("view", store_id=store_id)
             return redirect(next_url)
         flash("パスワードが違います", "error")
-    return render_template("staff_login.html")
 
+    return render_template("staff_login.html", store_id=store_id, store_name=store_name(store_id))
+
+# ---- 閲覧（ダミー画面）----
 @app.route("/<store_id>/view")
 def view(store_id):
     return render_template("view.html", store_name=store_name(store_id))
 
-# ====== シフト編集 ======
+# ---- シフト編集 ----
 @app.route("/<store_id>/schedule", methods=["GET", "POST"])
 def schedule(store_id):
     require_store_or_404(store_id)
     if not is_admin(store_id):
+        # 未ログインならログインへ
         return redirect(url_for("login_admin", store_id=store_id, next=url_for("schedule", store_id=store_id)))
 
     today = dt.date.today()
 
+    # ===== POST: 保存処理 =====
     if request.method == "POST":
+        # 送信年月（無ければ今日）
         year = int(request.form.get("year") or today.year)
         month = int(request.form.get("month") or today.month)
 
-        data_flat: Dict[str, Dict[str, List[str]]] = {}
-        _, last = month_bounds(year, month)
+        # 例: day_15_morning_1 = "田中"
+        # → day="15", shift="morning", slot="1|2"
+        pat = re.compile(r"^day_(\d+)_([^_]+)_(1|2)$")
 
-        # 旧方式: name="day_<day>_<shift>_1/2"
-        for day in range(1, last.day + 1):
-            day_key = str(day)
-            for s in SHIFTS:
-                a1 = request.form.get(f"day_{day}_{s}_1")
-                a2 = request.form.get(f"day_{day}_{s}_2")
-                if a1 is not None or a2 is not None:
-                    data_flat.setdefault(day_key, {})[s] = [a1 or "", a2 or ""]
+        data_flat: dict[str, dict] = {}
 
+        for key, val in request.form.items():
+            m = pat.match(key)
+            if not m:
+                continue
+            day_str, shift_key, slot_str = m.groups()
+            cur = data_flat.setdefault(day_str, {}).setdefault(shift_key, ["", ""])
+            idx = 0 if slot_str == "1" else 1
+            cur[idx] = val or ""
+
+        # 1つもヒットしなくても空dictを書いておく（描画が安定）
         save_schedule(store_id, year, month, data_flat)
         flash("保存しました。", "success")
         return redirect(url_for("schedule", store_id=store_id, year=year, month=month))
 
-    # GET
+    # ===== GET: 画面表示 =====
     year = int(request.args.get("year") or today.year)
     month = int(request.args.get("month") or today.month)
+
     employees = load_employees(store_id)
-    raw = load_schedule(store_id, year, month) or {}
-    schedules = _normalize_schedule_dict(raw)
+
+    # 保存データ（旧 {"d": {...}} もならす）
+    schedules = load_schedule(store_id, year, month) or {}
+    if isinstance(schedules, dict) and "d" in schedules and isinstance(schedules["d"], dict):
+        schedules = schedules["d"]
 
     weeks = build_calendar(year, month)
     prev_y, prev_m, next_y, next_m = prev_next_year_month(year, month)
@@ -201,7 +219,7 @@ def schedule(store_id):
         store_name=store_name(store_id),
         store_id=store_id,
         employees=employees,
-        prefill=schedules,
+        prefill=schedules,           # schedule.html は prefill["1"]["morning"] の形を参照
         shifts=SHIFTS,
         shifts_labels=SHIFTS_LABELS,
         weekdays=WEEKDAYS,
@@ -216,5 +234,12 @@ def schedule(store_id):
         month_options=month_options,
         is_admin=True,
         dt=dt,
-        now=dt.date.today(),
+        now=today,
     )
+
+# ==========================================================
+# ローカル実行用（Render では gunicorn が使用）
+# ==========================================================
+if __name__ == "__main__":
+    # ローカルテスト時は python app.py で起動
+    app.run(host="127.0.0.1", port=5000, debug=True)
