@@ -8,14 +8,13 @@ from typing import Dict, Any, List
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "CHANGE_ME_TO_A_RANDOM_STRING")
 
-# ====== 店舗名（ヘッダー表示用） ======
+# ====== 店舗設定 ======
 SITE_NAME = "若葉2丁目店"
+DEFAULT_STORE_ID = os.environ.get("DEFAULT_STORE_ID", "wakaba2")  # ← / はここへ飛ばします
 
-# ====== 管理者アカウント ======
+# ====== 管理者/スタッフ ======
 ADMIN_USER = "365836"
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin")
-
-# ====== スタッフ用パスワード ======
 STAFF_PASSWORD = os.environ.get("STAFF_PASSWORD", "test123")
 
 # ====== シフト定義 ======
@@ -27,17 +26,12 @@ SHIFTS_LABELS = {
     "evening": "夕方",
     "night": "深夜",
 }
-# 逆引き（日本語→英語）を作っておく
 LABEL_TO_KEY = {v: k for k, v in SHIFTS_LABELS.items()}
-
 WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
 
 DATA_DIR = Path("data")
 
-# ==========================================================
-# ユーティリティ関数
-# ==========================================================
-
+# ---------- 共通ユーティリティ ----------
 def store_name(store_id: str) -> str:
     return SITE_NAME
 
@@ -52,11 +46,9 @@ def prev_next_year_month(year: int, month: int):
     prev_y, prev_m = year, month - 1
     next_y, next_m = year, month + 1
     if prev_m == 0:
-        prev_m = 12
-        prev_y -= 1
+        prev_m, prev_y = 12, year - 1
     if next_m == 13:
-        next_m = 1
-        next_y += 1
+        next_m, next_y = 1, year + 1
     return prev_y, prev_m, next_y, next_m
 
 def load_employees(store_id: str):
@@ -95,59 +87,42 @@ def build_calendar(year: int, month: int):
 def is_admin(store_id: str):
     return session.get("is_admin")
 
-# ---------- 正規化: 保存形式のゆらぎを吸収 ----------
+# ---------- 保存形式の正規化 ----------
 def _norm_pair(v: Any) -> List[str]:
-    """値を ['a1','a2'] の形に正規化"""
     if isinstance(v, list) and len(v) >= 2:
         return [str(v[0] or ""), str(v[1] or "")]
     if isinstance(v, list) and len(v) == 1:
         return [str(v[0] or ""), ""]
     if isinstance(v, str):
-        # 文字列単体で入っていた古いケース（1枠目に詰める）
         return [v, ""]
     return ["", ""]
 
 def _normalize_schedule_dict(raw: Dict[str, Any]) -> Dict[str, Dict[str, List[str]]]:
-    """
-    受け取った dict を「日付キーがトップレベル」「shiftキーは英語（early, ...）」
-    「値は [a1, a2]」の形に正規化して返す。
-    """
     if not isinstance(raw, dict):
         return {}
-
-    # 旧形式 {"d": {...}} を剥がす
     if "d" in raw and isinstance(raw["d"], dict):
         raw = raw["d"]
-
     out: Dict[str, Dict[str, List[str]]] = {}
-
     for day_key, shifts_dict in raw.items():
         if not isinstance(shifts_dict, dict):
             continue
         day_out: Dict[str, List[str]] = {}
-
         for k, v in shifts_dict.items():
-            # 英語キーはそのまま
             if k in SHIFTS:
                 day_out[k] = _norm_pair(v)
-                continue
-            # 日本語ラベルなら英語キーへ変換
-            if k in LABEL_TO_KEY:
+            elif k in LABEL_TO_KEY:  # 日本語→英語
                 day_out[LABEL_TO_KEY[k]] = _norm_pair(v)
-                continue
-            # その他のキーは無視
         if day_out:
             out[str(day_key)] = day_out
-
     return out
 
-# ==========================================================
-# ルート
-# ==========================================================
+# ================= 路線 =================
 
+# / はそのまま当月のスケジュールへリダイレクト（テンプレは使わない）
 @app.route("/")
 def index():
-    return render_template("index.html", site_name=SITE_NAME)
+    today = dt.date.today()
+    return redirect(url_for("schedule", store_id=DEFAULT_STORE_ID, year=today.year, month=today.month))
 
 @app.route("/<store_id>/login-admin", methods=["GET", "POST"])
 def login_admin(store_id):
@@ -180,7 +155,7 @@ def staff_login(store_id):
 def view(store_id):
     return render_template("view.html", store_name=store_name(store_id))
 
-# ===== シフト編集 =====
+# ====== シフト編集 ======
 @app.route("/<store_id>/schedule", methods=["GET", "POST"])
 def schedule(store_id):
     require_store_or_404(store_id)
@@ -209,13 +184,10 @@ def schedule(store_id):
         flash("保存しました。", "success")
         return redirect(url_for("schedule", store_id=store_id, year=year, month=month))
 
-    # ===== GET =====
+    # GET
     year = int(request.args.get("year") or today.year)
     month = int(request.args.get("month") or today.month)
-
     employees = load_employees(store_id)
-
-    # どんな保存形式でも正規化して受け取る
     raw = load_schedule(store_id, year, month) or {}
     schedules = _normalize_schedule_dict(raw)
 
@@ -244,5 +216,5 @@ def schedule(store_id):
         month_options=month_options,
         is_admin=True,
         dt=dt,
-        now=today,
+        now=dt.date.today(),
     )
