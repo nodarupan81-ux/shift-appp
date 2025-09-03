@@ -1,62 +1,52 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{{ store_name }} - {{ year }}年 {{ month }}月 シフト表</title>
+  <meta charset="utf-8">
+  <title>シフト管理 | {{ site_name or "店舗" }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Arial, sans-serif; margin: 24px; }
-    .header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-    .title { font-size: 1.25rem; font-weight: 700; }
-    .nav { display: flex; gap: 8px; }
-    .btn {
-      display: inline-block; padding: 8px 12px; border: 1px solid #ccc; border-radius: 8px; text-decoration: none; color: #222;
-      background: #f7f7f7;
-    }
-    .btn:hover { background: #eee; }
-    table { border-collapse: collapse; width: 100%; max-width: 100%; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; white-space: nowrap; }
-    th { background: #fafafa; }
-    .name { text-align: left; white-space: normal; }
-    .subtle { color: #666; font-weight: 500; }
-    .grid { overflow-x: auto; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic UI",sans-serif;}
+    .container{max-width:820px;margin:8vh auto;padding:0 16px;}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+    .card{border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:18px}
+    h1{font-size:28px;margin:0 0 8px}
+    p{margin:6px 0;color:#6b7280}
+    a.btn{display:block;text-align:center;padding:14px;border-radius:10px;border:1px solid #2563eb;background:#3b82f6;color:#fff;font-weight:600;text-decoration:none}
+    a.btn-sub{border-color:#d1d5db;background:#fff;color:#111827}
+    @media (max-width:640px){.grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="title">
-      {{ store_name }} <span class="subtle">- {{ year }}年 {{ month }}月 シフト表</span>
-    </div>
-    <div class="nav">
-      <a class="btn" href="{{ url_for('prev_month', year=year, month=month) }}">&laquo; 前月</a>
-      <a class="btn" href="{{ url_for('index') }}">今月へ</a>
-      <a class="btn" href="{{ url_for('next_month', year=year, month=month) }}">翌月 &raquo;</a>
+  <div class="container">
+    <h1>シフト管理トップ</h1>
+    <p>{{ site_name or "若葉2丁目店" }} のメニュー</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>シフト編集（管理者）</h3>
+        <p>管理者ログイン後、編集画面へ移動します。</p>
+        <a class="btn" href="{{ url_for('login_admin', store_id='wakaba2', next=url_for('schedule', store_id='wakaba2')) }}">シフトを編集する</a>
+      </div>
+
+      <div class="card">
+        <h3>閲覧ページ</h3>
+        <p>公開用の閲覧画面（読み取り専用）です。</p>
+        <a class="btn-sub" href="{{ url_for('view', store_id='wakaba2') }}">シフトを見る</a>
+      </div>
+
+      <div class="card">
+        <h3>スタッフログイン</h3>
+        <p>スタッフ用のパスワードでログインします。</p>
+        <a class="btn-sub" href="{{ url_for('staff_login', store_id='wakaba2', next=url_for('view', store_id='wakaba2')) }}">スタッフログイン</a>
+      </div>
+
+      <div class="card">
+        <h3>管理者ログイン</h3>
+        <p>ID とパスワードでログインします。</p>
+        <a class="btn-sub" href="{{ url_for('login_admin', store_id='wakaba2', next=url_for('schedule', store_id='wakaba2')) }}">管理者ログイン</a>
+      </div>
     </div>
   </div>
-
-  <div class="grid">
-    <table>
-      <thead>
-        <tr>
-          <th>名前</th>
-          {# まずは 1〜7日を例示。後で1ヶ月分(28〜31日)へ拡張しやすい作りに。 #}
-          {% for d in days %}
-            <th>{{ month }}/{{ d }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in shifts %}
-          <tr>
-            <td class="name">{{ row.name }}</td>
-            {% for d in days %}
-              <td>{{ row["d" ~ d] }}</td>
-            {% endfor %}
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
 </body>
 </html>
