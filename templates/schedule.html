@@ -7,7 +7,6 @@
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    /* 最低限の保険（既存CSSの上書きが必要なとき用） */
     .container{max-width:960px;margin:0 auto;padding:0 12px;}
     .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:12px 0;flex-wrap:wrap;}
     .toolbar .right{display:flex;gap:8px;align-items:center;}
@@ -43,7 +42,6 @@
 <div class="container">
   <h1>シフト編集（{{ year }}年{{ month }}月）</h1>
 
-  {# フラッシュメッセージ表示 #}
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
@@ -57,31 +55,21 @@
     <input type="hidden" name="month" value="{{ month }}">
 
     <div class="toolbar">
-      <div class="left">
-        <strong>{{ store_name }}</strong>
-      </div>
+      <div class="left"><strong>{{ store_name }}</strong></div>
       <div class="right">
-        <div>
-          <a class="btn" href="{{ url_for('schedule', store_id=store_id, year=prev_year, month=prev_month) }}">← 前月</a>
-        </div>
-        <div>
-          <select onchange="location.href=this.value">
-            {% for y in year_options %}
-              {% for m in month_options %}
-                <option value="{{ url_for('schedule', store_id=store_id, year=y, month=m) }}"
-                  {% if y==year and m==month %}selected{% endif %}>
-                  {{ y }}年 {{ m }}月
-                </option>
-              {% endfor %}
+        <a class="btn" href="{{ url_for('schedule', store_id=store_id, year=prev_year, month=prev_month) }}">← 前月</a>
+        <select onchange="location.href=this.value">
+          {% for y in year_options %}
+            {% for m in month_options %}
+              <option value="{{ url_for('schedule', store_id=store_id, year=y, month=m) }}"
+                {% if y==year and m==month %}selected{% endif %}>
+                {{ y }}年 {{ m }}月
+              </option>
             {% endfor %}
-          </select>
-        </div>
-        <div>
-          <a class="btn" href="{{ url_for('schedule', store_id=store_id, year=next_year, month=next_month) }}">次月 →</a>
-        </div>
-        <div>
-          <button type="submit" class="btn btn-primary">保存する</button>
-        </div>
+          {% endfor %}
+        </select>
+        <a class="btn" href="{{ url_for('schedule', store_id=store_id, year=next_year, month=next_month) }}">次月 →</a>
+        <button type="submit" class="btn btn-primary">保存する</button>
       </div>
     </div>
 
@@ -90,20 +78,19 @@
         <thead>
           <tr>
             <th style="width:80px">週</th>
-            {% for d in range(1,8) %}
+            {% for _ in range(1,8) %}
               <th>日付 / シフト</th>
             {% endfor %}
           </tr>
         </thead>
         <tbody>
-          {# weeks は calendar.Calendar(...).monthdayscalendar の返り値（各週=7要素, 月外は0） #}
-          {% for w_idx, week in enumerate(weeks, start=1) %}
+          {# weeks は monthdayscalendar の返り値（各週=7要素, 月外は0） #}
+          {% for week in weeks %}
             <tr>
-              <th>第{{ w_idx }}週</th>
+              <th>第{{ loop.index }}週</th>
               {% for day in week %}
                 <td class="day-cell">
                   {% if day == 0 %}
-                    <!-- 月外 -->
                     <div class="day-header" style="opacity:.5">—</div>
                   {% else %}
                     {% set day_key = day|string %}
@@ -146,7 +133,6 @@
       </table>
     </div>
 
-    <!-- 下部固定の保存バー -->
     <div class="save-bar">
       <div class="container">
         <button type="submit" class="btn btn-primary">保存する</button>
