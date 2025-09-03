@@ -1,52 +1,56 @@
-﻿# -*- coding: utf-8 -*-
-import os
-import re
-import json
-import calendar
+﻿from flask import Flask, render_template, request, redirect, url_for, session, abort, flash
+import os, json, calendar
 import datetime as dt
+import re
 from pathlib import Path
-from flask import (
-    Flask, render_template, request, redirect, url_for,
-    session, flash, abort
-)
+from typing import Dict, Any, List
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "CHANGE_ME_TO_A_RANDOM_STRING")
 
-# ===== 基本設定 =====
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-change-me")
+# ====== 店舗名（ヘッダー表示用） ======
+SITE_NAME = "若葉2丁目店"
 
-STAFF_PASSWORD = os.environ.get("STAFF_PASSWORD", "staffpass")   # 従業員ログイン用
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "adminpass")   # 管理者ログイン用
+# ====== 管理者アカウント ======
+ADMIN_USER = "365836"
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin")
 
-STORES = {
-    "wakaba2": "若葉2丁目店",
-    "akitsu":  "秋津新町店",
+# ====== スタッフ用パスワード ======
+STAFF_PASSWORD = os.environ.get("STAFF_PASSWORD", "test123")
+
+# ====== シフト定義 ======
+SHIFTS = ["early", "morning", "afternoon", "evening", "night"]
+SHIFTS_LABELS = {
+    "early": "早朝",
+    "morning": "午前",
+    "afternoon": "午後",
+    "evening": "夕方",
+    "night": "深夜",
 }
+# 逆引き（日本語→英語）を作っておく
+LABEL_TO_KEY = {v: k for k, v in SHIFTS_LABELS.items()}
 
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
+WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
 
-# ===== 便利関数 =====
+DATA_DIR = Path("data")
+
+# ==========================================================
+# ユーティリティ関数
+# ==========================================================
+
+def store_name(store_id: str) -> str:
+    return SITE_NAME
+
+def require_store_or_404(store_id: str):
+    if not store_exists(store_id):
+        abort(404)
+
 def store_exists(store_id: str) -> bool:
-    return store_id in STORES
-
-def month_bounds(year: int, month: int):
-    """対象月の1日と末日を返す"""
-    first = dt.date(year, month, 1)
-    last_day = calendar.monthrange(year, month)[1]
-    last = dt.date(year, month, last_day)
-    return first, last
-
-def build_calendar(year: int, month: int):
-    """カレンダー配列（週×7日、0=月曜日）"""
-    cal = calendar.Calendar(firstweekday=0)
-    return cal.monthdayscalendar(year, month)
+    return True
 
 def prev_next_year_month(year: int, month: int):
-    prev_m = month - 1
-    prev_y = year
-    next_m = month + 1
-    next_y = year
+    prev_y, prev_m = year, month - 1
+    next_y, next_m = year, month + 1
     if prev_m == 0:
         prev_m = 12
         prev_y -= 1
@@ -78,126 +82,105 @@ def save_schedule(store_id: str, year: int, month: int, payload: dict):
     p = schedule_file_path(store_id, year, month)
     p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
-def store_name(store_id: str) -> str:
-    return STORES.get(store_id, store_id)
+def month_bounds(year: int, month: int):
+    first = dt.date(year, month, 1)
+    _, last_day = calendar.monthrange(year, month)
+    last = dt.date(year, month, last_day)
+    return first, last
 
-def require_store_or_404(store_id: str):
-    if not store_exists(store_id):
-        abort(404)
+def build_calendar(year: int, month: int):
+    cal = calendar.Calendar(firstweekday=0)
+    return cal.monthdayscalendar(year, month)
 
-def is_admin(store_id: str) -> bool:
-    return session.get(f"is_admin_{store_id}", False)
+def is_admin(store_id: str):
+    return session.get("is_admin")
 
-def is_staff_authed(store_id: str) -> bool:
-    return session.get(f"staff_authed_{store_id}", False)
+# ---------- 正規化: 保存形式のゆらぎを吸収 ----------
+def _norm_pair(v: Any) -> List[str]:
+    """値を ['a1','a2'] の形に正規化"""
+    if isinstance(v, list) and len(v) >= 2:
+        return [str(v[0] or ""), str(v[1] or "")]
+    if isinstance(v, list) and len(v) == 1:
+        return [str(v[0] or ""), ""]
+    if isinstance(v, str):
+        # 文字列単体で入っていた古いケース（1枠目に詰める）
+        return [v, ""]
+    return ["", ""]
 
-# ===== 表示用定数 =====
-WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
-SHIFTS = ["socho", "gozen", "gogo", "yugata", "shinya"]
-SHIFTS_LABELS = {
-    "socho":  "早朝",
-    "gozen":  "午前",
-    "gogo":   "午後",
-    "yugata": "夕方",
-    "shinya": "深夜",
-}
+def _normalize_schedule_dict(raw: Dict[str, Any]) -> Dict[str, Dict[str, List[str]]]:
+    """
+    受け取った dict を「日付キーがトップレベル」「shiftキーは英語（early, ...）」
+    「値は [a1, a2]」の形に正規化して返す。
+    """
+    if not isinstance(raw, dict):
+        return {}
 
-# ===== 入口 =====
+    # 旧形式 {"d": {...}} を剥がす
+    if "d" in raw and isinstance(raw["d"], dict):
+        raw = raw["d"]
+
+    out: Dict[str, Dict[str, List[str]]] = {}
+
+    for day_key, shifts_dict in raw.items():
+        if not isinstance(shifts_dict, dict):
+            continue
+        day_out: Dict[str, List[str]] = {}
+
+        for k, v in shifts_dict.items():
+            # 英語キーはそのまま
+            if k in SHIFTS:
+                day_out[k] = _norm_pair(v)
+                continue
+            # 日本語ラベルなら英語キーへ変換
+            if k in LABEL_TO_KEY:
+                day_out[LABEL_TO_KEY[k]] = _norm_pair(v)
+                continue
+            # その他のキーは無視
+        if day_out:
+            out[str(day_key)] = day_out
+
+    return out
+
+# ==========================================================
+# ルート
+# ==========================================================
+
 @app.route("/")
-def landing():
-    return render_template("landing.html", stores=STORES)
+def index():
+    return render_template("index.html", site_name=SITE_NAME)
 
-# ===== 従業員ログイン =====
-@app.route("/<store_id>/staff-login", methods=["GET", "POST"])
-def staff_login(store_id):
-    """スタッフ用ログイン。成功したら next (なければ /<store_id>/view) へ"""
-    require_store_or_404(store_id)
-
-    next_url = request.values.get("next") or url_for("view", store_id=store_id)
-
-    if request.method == "POST":
-        pwd = request.form.get("password", "")
-        if pwd == STAFF_PASSWORD:
-            session[f"staff_authed_{store_id}"] = True
-            return redirect(next_url)
-        flash("パスワードが違います。", "error")
-        # 入力値を保持したい場合は hidden で next を渡す
-        return redirect(url_for("staff_login", store_id=store_id, next=next_url))
-
-    # GET はログイン画面を出す（※ここで schedule.html を出していたのが不具合の原因）
-    return render_template(
-        "staff_login.html",
-        store_id=store_id,
-        store_name=store_name(store_id),
-        next_url=next_url,
-    )
-
-@app.route("/<store_id>/staff-logout")
-def staff_logout(store_id):
-    session.pop(f"staff_authed_{store_id}", None)
-    return redirect(url_for("staff_login", store_id=store_id))
-
-# ===== 管理者ログイン =====
 @app.route("/<store_id>/login-admin", methods=["GET", "POST"])
 def login_admin(store_id):
-    require_store_or_404(store_id)
     if request.method == "POST":
-        pwd = request.form.get("password", "")
-        next_url = request.form.get("next") or url_for("schedule", store_id=store_id)
-        if pwd == ADMIN_PASSWORD:
-            session[f"is_admin_{store_id}"] = True
+        if request.form.get("userid") == ADMIN_USER and request.form.get("password") == ADMIN_PASSWORD:
+            session["is_admin"] = True
+            flash("管理者ログイン成功", "success")
+            next_url = request.args.get("next") or url_for("view", store_id=store_id)
             return redirect(next_url)
-        flash("パスワードが違います。", "error")
-    next_url = request.args.get("next") or url_for("schedule", store_id=store_id)
-    return render_template("login_admin.html", store_id=store_id, store_name=store_name(store_id), next_url=next_url)
+        flash("ユーザーIDまたはパスワードが違います", "error")
+    return render_template("login_admin.html")
 
-@app.route("/<store_id>/logout-admin")
-def logout_admin(store_id):
-    session.pop(f"is_admin_{store_id}", None)
+@app.route("/<store_id>/logout")
+def logout(store_id):
+    session.clear()
     return redirect(url_for("login_admin", store_id=store_id))
 
-# ===== スタッフ閲覧 =====
+@app.route("/<store_id>/staff-login", methods=["GET", "POST"])
+def staff_login(store_id):
+    if request.method == "POST":
+        if request.form.get("password") == STAFF_PASSWORD:
+            session["is_staff"] = True
+            flash("スタッフログイン成功", "success")
+            next_url = request.args.get("next") or url_for("view", store_id=store_id)
+            return redirect(next_url)
+        flash("パスワードが違います", "error")
+    return render_template("staff_login.html")
+
 @app.route("/<store_id>/view")
 def view(store_id):
-    require_store_or_404(store_id)
-    today = dt.date.today()
-    year = int(request.args.get("year") or today.year)
-    month = int(request.args.get("month") or today.month)
+    return render_template("view.html", store_name=store_name(store_id))
 
-    employees = load_employees(store_id)
-    schedules = load_schedule(store_id, year, month)
-    weeks = build_calendar(year, month)
-    prev_y, prev_m, next_y, next_m = prev_next_year_month(year, month)
-
-    year_options = list(range(today.year - 1, today.year + 2))
-    month_options = list(range(1, 13))
-
-    return render_template(
-        "schedule.html",
-        title=None,
-        store_name=store_name(store_id),
-        store_id=store_id,
-        employees=employees,
-        prefill=schedules,
-        schedule=schedules,
-        shifts=SHIFTS,
-        shifts_labels=SHIFTS_LABELS,
-        weekdays=WEEKDAYS,
-        weeks=weeks,
-        year=year,
-        month=month,
-        prev_year=prev_y,
-        prev_month=prev_m,
-        next_year=next_y,
-        next_month=next_m,
-        year_options=year_options,
-        month_options=month_options,
-        is_admin=False,
-        dt=dt,
-        now=today,
-    )
-
-# ===== シフト編集（管理者） =====
+# ===== シフト編集 =====
 @app.route("/<store_id>/schedule", methods=["GET", "POST"])
 def schedule(store_id):
     require_store_or_404(store_id)
@@ -209,47 +192,44 @@ def schedule(store_id):
     if request.method == "POST":
         year = int(request.form.get("year") or today.year)
         month = int(request.form.get("month") or today.month)
-        data = load_schedule(store_id, year, month)
 
-        # 1) 新方式: name="shifts[<week>][<day>][<slot>]"
-        pat = re.compile(r'^shifts\[(\d+)\]\[(\d+)\]\[(.+)\]$')
-        for key, val in request.form.items():
-            m = pat.match(key)
-            if m:
-                w, d, slot = m.groups()
-                data.setdefault(w, {}).setdefault(d, {})[slot] = val
-
-        # 2) 旧方式: name="day_<day>_<shift>_1/2"
+        data_flat: Dict[str, Dict[str, List[str]]] = {}
         _, last = month_bounds(year, month)
+
+        # 旧方式: name="day_<day>_<shift>_1/2"
         for day in range(1, last.day + 1):
+            day_key = str(day)
             for s in SHIFTS:
                 a1 = request.form.get(f"day_{day}_{s}_1")
                 a2 = request.form.get(f"day_{day}_{s}_2")
                 if a1 is not None or a2 is not None:
-                    data.setdefault("d", {}).setdefault(str(day), {})[s] = [a1 or "", a2 or ""]
+                    data_flat.setdefault(day_key, {})[s] = [a1 or "", a2 or ""]
 
-        save_schedule(store_id, year, month, data)
+        save_schedule(store_id, year, month, data_flat)
         flash("保存しました。", "success")
         return redirect(url_for("schedule", store_id=store_id, year=year, month=month))
 
+    # ===== GET =====
     year = int(request.args.get("year") or today.year)
     month = int(request.args.get("month") or today.month)
+
     employees = load_employees(store_id)
-    schedules = load_schedule(store_id, year, month)
+
+    # どんな保存形式でも正規化して受け取る
+    raw = load_schedule(store_id, year, month) or {}
+    schedules = _normalize_schedule_dict(raw)
+
     weeks = build_calendar(year, month)
     prev_y, prev_m, next_y, next_m = prev_next_year_month(year, month)
-
     year_options = list(range(today.year - 1, today.year + 2))
     month_options = list(range(1, 13))
 
     return render_template(
         "schedule.html",
-        title=None,
         store_name=store_name(store_id),
         store_id=store_id,
         employees=employees,
         prefill=schedules,
-        schedule=schedules,
         shifts=SHIFTS,
         shifts_labels=SHIFTS_LABELS,
         weekdays=WEEKDAYS,
@@ -266,57 +246,3 @@ def schedule(store_id):
         dt=dt,
         now=today,
     )
-
-# ===== 従業員名・定休日などの設定（管理） =====
-@app.route("/<store_id>/settings", methods=["GET", "POST"])
-def settings(store_id):
-    require_store_or_404(store_id)
-    if not is_admin(store_id):
-        return redirect(url_for("login_admin", store_id=store_id, next=url_for("settings", store_id=store_id)))
-
-    employees = load_employees(store_id)
-
-    if request.method == "POST":
-        raw = (request.form.get("employees_text") or request.form.get("employees") or "").strip()
-        submitted = ("employees_text" in request.form) or ("employees" in request.form)
-        if submitted:
-            if raw:
-                new_list = [line.strip() for line in raw.splitlines() if line.strip()]
-                target_path = DATA_DIR / store_id / "employees.json"
-                target_path.parent.mkdir(parents=True, exist_ok=True)
-                target_path.write_text(json.dumps(new_list, ensure_ascii=False, indent=2), encoding="utf-8")
-                flash("保存しました。", "success")
-            else:
-                flash("入力が空です。保存は行われませんでした。", "info")
-            return redirect(url_for("settings", store_id=store_id))
-
-    return render_template(
-        "settings.html",
-        store_id=store_id,
-        store_name=store_name(store_id),
-        employees=employees,
-        employees_text="\n".join(employees),
-    )
-
-# ===== /<store_id>/ に来たら view へ =====
-@app.route("/<store_id>/")
-def go_store_root(store_id):
-    require_store_or_404(store_id)
-    return redirect(url_for("view", store_id=store_id))
-# ---- added global logout ----
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
-
-
-# ---- alias for old templates (added by helper) ----
-# ---- unified logout route (single source of truth) ----
-@app.route("/logout")
-def logout():
-    for sid in STORES.keys():
-        session.pop(f"is_admin_{sid}", None)
-        session.pop(f"staff_authed_{sid}", None)
-    return redirect(url_for("landing"))
-
-
