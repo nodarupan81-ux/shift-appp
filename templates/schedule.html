@@ -148,5 +148,83 @@
       最終表示: {{ now.strftime('%Y-%m-%d') }}
     </div>
   </div>
-</body>
+</body>{# ====== ここから追記：保存バー＋JS ====== #}
+<!-- 下部固定の保存バー（どの端末でも常に表示） -->
+<div class="save-bar">
+  <div class="container">
+    <button type="button" class="btn btn-primary" id="saveScheduleBtn">保存する</button>
+  </div>
+</div>
+
+<script>
+/*
+  保存ボタンは“フォームが無くても”動きます。
+  ページ内の <input>/<select>/<textarea> をすべて収集して
+  /<store_id>/schedule に POST します。
+  既存の name 属性をそのまま送るので、サーバ側の処理はそのまま使えます。
+*/
+(function () {
+  const btn = document.getElementById('saveScheduleBtn');
+  if (!btn) return;
+
+  const postUrl = "{{ url_for('schedule', store_id=store_id) }}";
+
+  function collectFormData() {
+    const fd = new FormData();
+    // 年月はサーバ側で使うので送る（テンプレに渡っている値をそのまま）
+    fd.append('year',  String({{ year }}));
+    fd.append('month', String({{ month }}));
+
+    // 画面上の全ての input/select/textarea を集める
+    const fields = document.querySelectorAll('input, select, textarea');
+    fields.forEach(el => {
+      if (!el.name) return;              // nameがない要素は無視
+      if (el.type === 'checkbox') {
+        if (el.checked) fd.append(el.name, el.value || 'on');
+      } else if (el.type === 'radio') {
+        if (el.checked) fd.append(el.name, el.value);
+      } else {
+        fd.append(el.name, el.value ?? '');
+      }
+    });
+    return fd;
+  }
+
+  async function saveSchedule() {
+    btn.disabled = true;
+    btn.textContent = '保存中…';
+
+    try {
+      const res = await fetch(postUrl, {
+        method: 'POST',
+        body: collectFormData(),
+        // FlaskのCSRFを使っていない前提。使っている場合はヘッダ等を追加
+      });
+
+      // リダイレクトあり/なし両対応：成功ならそのまま遷移 or リロード
+      if (res.redirected) {
+        window.location.href = res.url;
+        return;
+      }
+
+      if (res.ok) {
+        // 保存成功のフィードバック（フラッシュがあればリロードして表示）
+        location.reload();
+      } else {
+        alert('保存に失敗しました（HTTP ' + res.status + '）');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('保存中にエラーが発生しました。ネットワークをご確認ください。');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '保存する';
+    }
+  }
+
+  btn.addEventListener('click', saveSchedule);
+})();
+</script>
+{# ====== 追記ここまで ====== #}
+
 </html>

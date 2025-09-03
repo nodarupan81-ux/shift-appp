@@ -218,3 +218,53 @@ html, body {
   color: #fff;
 }
 .btn:active{ transform: translateY(1px); }
+/* ===== Save bar (sticky bottom) ===== */
+.save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+  background: rgba(255,255,255,0.96);
+  border-top: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  backdrop-filter: saturate(180%) blur(4px);
+}
+.save-bar .container {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Buttons (上書き可) */
+.btn {
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+.btn:disabled { opacity: .6; cursor: default; }
+.btn-primary {
+  border-color: #2563eb;
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 600;
+}
+.btn-primary:hover { filter: brightness(0.97); }
+
+/* モバイルは下端固定＆左右いっぱい */
+@media (max-width: 640px) {
+  .save-bar { position: fixed; left: 0; right: 0; }
+  .save-bar .container { padding: 0 12px; }
+  /* 入力UIのタップ最適化 */
+  input[type="text"], input[type="password"], select, button, .btn {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-wrap table { min-width: 720px; }
+}
