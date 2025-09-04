@@ -1,41 +1,42 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>{{ store_name }} - 名簿・定員の設定</title>
+  <meta charset="utf-8">
+  <title>スタッフ名の設定 | {{ store_name }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .container{max-width:720px;margin:4vh auto;padding:0 16px;}
+    h1{font-size:22px;margin:0 0 12px;}
+    .flash{margin:12px 0;padding:10px 12px;border-radius:8px;}
+    .flash.success{background:#e6ffed;border:1px solid #b7ebc6;}
+    .flash.error{background:#ffecec;border:1px solid #ffb5b5;}
+    textarea{width:100%;min-height:260px;box-sizing:border-box;padding:12px 14px;border:1px solid #d1d5db;border-radius:10px;font:inherit}
+    .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .btn{padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#fff;cursor:pointer}
+    .btn-primary{border-color:#2563eb;background:#3b82f6;color:#fff;font-weight:600}
+    .note{color:#6b7280;margin-top:8px}
+  </style>
 </head>
 <body>
-  <div class="header">
-    <div class="container header-inner">
-      <h1 class="title">{{ store_name }} - 名簿・定員の設定</h1>
-      <div></div>
-      <div class="nav">
-        <a href="{{ url_for('schedule', store_id=store_id) }}">シフト編集</a> |
-        <a href="{{ url_for('view', store_id=store_id) }}">従業員用（閲覧）</a> |
-        <a href="{{ url_for('logout') }}">ログアウト</a>
-      </div>
-    </div>
-  </div>
-
   <div class="container">
+    <h1>スタッフ名の設定</h1>
+
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div class="flash">
-          {% for category, message in messages %}
-            <div class="flash-item {{ category }}">{{ message }}</div>
-          {% endfor %}
-        </div>
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
       {% endif %}
     {% endwith %}
 
-    <form method="post" class="panel">
-      <h2>従業員リスト</h2>
-      <p>1行につき1名で入力してください（例：山田太郎）</p>
-      <textarea class="employees" name="employees_text" rows="14"
-        placeholder="例：&#10;山田太郎&#10;佐藤花子">{{ employees_text or '' }}</textarea>
-      <div style="margin-top:10px">
-        <button class="primary" type="submit">保存</button>
+    <form method="post" action="{{ url_for('settings', store_id=store_id) }}">
+      <p class="note">1行1名で入力してください（カンマ・読点でも区切れます）。重複や空行は自動整理されます。</p>
+      <textarea name="names" placeholder="例）&#10;田中 太郎&#10;佐藤 花子&#10;…">{{ text }}</textarea>
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">保存する</button>
+        <a class="btn" href="{{ url_for('schedule', store_id=store_id) }}">シフト編集に戻る</a>
+        <a class="btn" href="{{ url_for('index') }}">トップへ</a>
       </div>
     </form>
   </div>
