@@ -2,26 +2,30 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <title>スタッフ名の設定 | {{ store_name }}</title>
+  <title>スタッフ名の設定 | {{ site_name }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    .container{max-width:720px;margin:4vh auto;padding:0 16px;}
-    h1{font-size:22px;margin:0 0 12px}
+    body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f9fafb;margin:0;padding:0}
+    .container{max-width:720px;margin:40px auto;padding:0 16px}
+    h1{font-size:22px;margin:0 0 16px}
     .flash{margin:12px 0;padding:10px 12px;border-radius:8px}
     .flash.success{background:#e6ffed;border:1px solid #b7ebc6}
     .flash.error{background:#ffecec;border:1px solid #ffb5b5}
-    textarea{width:100%;min-height:260px;box-sizing:border-box;padding:12px 14px;border:1px solid #d1d5db;border-radius:10px;font:inherit}
-    .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-    .btn{padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#fff;cursor:pointer}
+    ul{list-style:none;padding:0;margin:0 0 12px}
+    li{margin:4px 0}
+    input[type="text"]{width:100%;padding:10px 12px;margin:4px 0;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box}
+    .actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+    .btn{padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font:inherit}
     .btn-primary{border-color:#2563eb;background:#3b82f6;color:#fff;font-weight:600}
-    .note{color:#6b7280;margin-top:8px}
+    .note{color:#6b7280;margin-top:4px;font-size:13px}
   </style>
 </head>
 <body>
   <div class="container">
     <h1>スタッフ名の設定</h1>
 
+    <!-- フラッシュメッセージ -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -31,14 +35,35 @@
     {% endwith %}
 
     <form method="post" action="{{ url_for('settings', store_id=store_id) }}">
-      <p class="note">1行1名で入力してください（カンマ・読点でも区切れます）。重複や空行は自動整理されます。</p>
-      <textarea name="names" placeholder="例）&#10;田中 太郎&#10;佐藤 花子&#10;…">{{ text }}</textarea>
+      <p class="note">必要なスタッフ名を入力してください。空欄の行は無視されます。</p>
+
+      <ul id="employee-list">
+        {% if employees %}
+          {% for emp in employees %}
+            <li><input type="text" name="employees[]" value="{{ emp }}"></li>
+          {% endfor %}
+        {% else %}
+          <li><input type="text" name="employees[]" placeholder="例）田中 太郎"></li>
+        {% endif %}
+      </ul>
+
       <div class="actions">
+        <button type="button" class="btn" onclick="addRow()">行を追加</button>
         <button type="submit" class="btn btn-primary">保存する</button>
         <a class="btn" href="{{ url_for('schedule', store_id=store_id) }}">シフト編集に戻る</a>
         <a class="btn" href="{{ url_for('index') }}">トップへ</a>
       </div>
     </form>
   </div>
+
+  <script>
+    function addRow(){
+      const ul = document.getElementById('employee-list');
+      const li = document.createElement('li');
+      li.innerHTML = '<input type="text" name="employees[]" placeholder="例）佐藤 花子">';
+      ul.appendChild(li);
+    }
+  </script>
 </body>
 </html>
+
