@@ -1,9 +1,73 @@
 ﻿{% extends "base.html" %}
+{% block title %}スタッフ名の設定{% endblock %}
+
 {% block content %}
-<h1>スタッフ名の設定</h1>
-<form method="post" class="card form">
-  <label>1行に1名（表示順 = プルダウン順）</label>
-  <textarea name="names" rows="12" spellcheck="false">{{ text }}</textarea>
-  <button type="submit">保存</button>
-</form>
+<div class="container">
+  <h1>スタッフ名の設定（{{ site_name }}）</h1>
+
+  <div class="navline">
+    <a class="btn" href="{{ url_for('schedule', store_id=store_id) }}">シフト編集へ戻る</a>
+    <span class="spacer"></span>
+    <a class="btn" href="{{ url_for('view', store_id=store_id) }}">閲覧</a>
+    <a class="btn" href="{{ url_for('logout', store_id=store_id) }}">ログアウト</a>
+  </div>
+
+  <!-- 現在のスタッフ一覧（削除ボタン付き） -->
+  <h2>現在のスタッフ（削除はこちらから）</h2>
+
+  {% if staff %}
+    <form method="post" class="card" style="padding:10px; border:1px solid #e5e7eb; border-radius:10px; background:#fff;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:48px;">選択</th>
+            <th>名前</th>
+            <th style="width:120px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in staff %}
+          <tr>
+            <td style="text-align:center;">
+              <input type="checkbox" name="chk[]" value="{{ s }}">
+            </td>
+            <td>{{ s }}</td>
+            <td>
+              <!-- 単体削除ボタン -->
+              <button type="submit" name="delete_name" value="{{ s }}" class="btn" onclick="return confirm('削除しますか？')">削除</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div style="margin-top:8px;">
+        <button type="submit" name="action" value="bulk_delete" class="btn" onclick="return confirm('選択した名前を削除しますか？')">選択をまとめて削除</button>
+      </div>
+    </form>
+  {% else %}
+    <p class="muted">（まだスタッフ名が登録されていません）</p>
+  {% endif %}
+
+  <hr style="margin:24px 0;">
+
+  <!-- 追加フォーム -->
+  <h2>スタッフの追加</h2>
+  <form method="post" class="card" style="padding:10px; border:1px solid #e5e7eb; border-radius:10px; background:#fff;">
+    <p class="muted" style="margin:0 0 8px;">一度に5名まで個別入力できます。下のテキスト欄に「改行・カンマ・読点」で複数名を一括追加することも可能です。</p>
+
+    <div style="display:grid; grid-template-columns: repeat(2, minmax(200px, 1fr)); gap:8px; max-width:640px;">
+      {% for i in range(1,6) %}
+        <input type="text" name="staff{{ i }}" placeholder="スタッフ名 {{ i }}" class="pill">
+      {% endfor %}
+    </div>
+
+    <div style="margin-top:10px;">
+      <textarea name="bulk" rows="4" style="width:100%; max-width:640px;" placeholder="一括追加（例）&#10;山田, 佐藤, 鈴木&#10;または改行区切りでもOK"></textarea>
+    </div>
+
+    <div style="margin-top:10px;">
+      <button type="submit" name="action" value="add" class="btn btn-primary">追加して保存</button>
+    </div>
+  </form>
+</div>
 {% endblock %}
