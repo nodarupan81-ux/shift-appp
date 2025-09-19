@@ -1,270 +1,123 @@
-/* ==============================
-   基本スタイル
-============================== */
-:root {
-  --border: #dfe3e8;
-  --bg: #ffffff;
-  --bg-alt: #fafbfc;
-  --head-bg: #ffffff;
-  --text: #0f172a;
-  --badge: #f1f5f9;
-  --radius: 8px;
+/* =========================
+   static/style.css  (Final)
+   1) Minimum base（先）
+   2) App-specific calendar（後）
+   ========================= */
+
+/* ---- 1) Minimum base ---- */
+body{
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI","Yu Gothic","Meiryo",sans-serif;
+  margin:24px;
+
+  /* ▼ 背景画像（static/bg.png）を使用 */
+  background: url("/static/bg.png") no-repeat center top fixed;
+  background-size: cover;
+
+  /* 読み込み失敗時や下側の余白に見える色 */
+  background-color:#f3f8fc;
+}
+h1,h2{margin:8px 0 16px}
+.container{
+  max-width:1200px;margin:0 auto;
+
+  /* ▼ コンテンツ面を読みやすく（半透明ホワイト＋角丸） */
+  background:rgba(255,255,255,.85);
+  border-radius:12px;
+  padding:16px 20px;
+  box-shadow:0 6px 24px rgba(0,0,0,.06);
+  backdrop-filter:saturate(120%) blur(2px); /* 対応ブラウザのみ */
+}
+.btn{display:inline-block;padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;background:#f8fafc;text-decoration:none;color:#111;font-size:.95rem}
+.btn:hover{filter:brightness(0.98)}
+.btn-primary{background:#2563eb;border-color:#1d4ed8;color:#fff}
+.table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
+.table th,.table td{padding:8px 10px;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb}
+.table th:last-child,.table td:last-child{border-right:none}
+.badge{display:inline-block;padding:2px 6px;border-radius:9999px;background:#eef2ff;color:#3730a3;font-size:12px}
+
+/* ---- 2) App-specific (calendar & view) ---- */
+/* 画面共通の小物 */
+:root{
+  --border:#dcdfe6;
+  --muted:#9aa0a6;
+  --head:#f6f7fb;
+  --sun:#f56c6c;
+  --sat:#409eff;
+  --pill-bg:#f0f5ff;
+  --pill-border:#c6d4ff;
+}
+*{box-sizing:border-box;}
+
+/* ボタン行 */
+.navline{display:flex;gap:.5rem;align-items:center;margin:10px 0 16px;}
+.navline .spacer{flex:1;}
+/* 上の minimum の .btn を基本に、差分だけあるならここで追加 */
+
+/* ===== デスクトップ用カレンダー（週×曜日） ===== */
+.cal-grid{display:grid; gap:6px; border-top:1px solid var(--border); margin-bottom:32px;}
+.cal-header, .cal-row{
+  display:grid;
+  grid-template-columns: 80px repeat(7, minmax(160px,1fr));
+  gap:6px;
+}
+.cell{
+  border:1px solid var(--border);
+  background:#fff; border-radius:10px; padding:8px;
+}
+.cell.head{
+  background:var(--head); font-weight:700; text-align:center;
+  border-radius:10px; border:1px solid var(--border);
+}
+.cell.weekno{display:flex; align-items:center; justify-content:center; font-weight:700; background:#fafafa;}
+.cell.day{min-height:140px; display:flex; flex-direction:column; gap:6px;}
+.cell.day .daynum{font-weight:700; margin-bottom:2px; border-bottom:1px dashed var(--border); padding-bottom:4px;}
+.cell.day.sun .daynum{color:var(--sun);}
+.cell.day.sat .daynum{color:var(--sat);}
+
+.shifts{display:flex; flex-direction:column; gap:6px;}
+.shift-line{display:flex; gap:8px; align-items:flex-start; border-top:1px solid var(--border); padding-top:6px;}
+.shift-line:first-of-type{border-top:none; padding-top:0;}
+.shift-label{min-width:38px; font-weight:600;}
+.shift-names{flex:1; display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center}
+.pill{
+  display:inline-block; padding:.15rem .45rem; border:1px solid var(--pill-border);
+  background:var(--pill-bg); border-radius:999px; font-size:.85rem;
+}
+.sep{margin:0 2px; color:#666;}
+.muted{color:var(--muted);}
+
+/* ===== モバイル：1日1カード ===== */
+.only-mobile{display:none;}
+.day-card{
+  border:1px solid var(--border); border-radius:12px; background:#fff;
+  padding:10px 10px 8px; margin-bottom:12px;
+}
+.daycard-head{
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px dashed var(--border); padding-bottom:4px; margin-bottom:6px;
+}
+.daycard-head .daynum{font-weight:700;}
+.weekday .sun{color:var(--sun);} .weekday .sat{color:var(--sat);}
+.mrow{display:flex; gap:8px; align-items:flex-start; padding:6px 0; border-top:1px solid var(--border);}
+.mrow:first-of-type{border-top:none; padding-top:2px;}
+.mlabel{min-width:38px; font-weight:600;}
+.mnames{flex:1; display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center}
+
+/* スマホ切替 */
+@media (max-width: 960px){
+  .only-desktop{display:none;}
+  .only-mobile{display:block;}
 }
 
-* { box-sizing: border-box; }
-
-html, body {
-  margin: 0;
-  color: var(--text);
-  background: #f6f7f8;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Meiryo", sans-serif;
+/* 追加：管理者編集画面のマス目も少しはっきり（既存HTMLに影響しない安全な強化） */
+.table-like .cell,
+.cal .cell{
+  border:1px solid var(--border);
 }
 
-/* ==============================
-   ヘッダー・フッター
-============================== */
-.page-header, .page-footer {
-  padding: 10px 12px;
-}
-.page-header h1 {
-  margin: 0;
-  font-size: clamp(16px, 4vw, 20px);
-}
-
-/* ==============================
-   横スクロールテーブル
-============================== */
-.table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch; /* iOSで滑らかスクロール */
-  padding: 8px 12px 16px;
-}
-
-.shift-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  min-width: 720px;
-  table-layout: fixed;
-}
-
-/* 角丸 */
-.shift-table thead th:first-child { border-top-left-radius: var(--radius); }
-.shift-table thead th:last-child  { border-top-right-radius: var(--radius); }
-
-.shift-table th,
-.shift-table td {
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  padding: 8px 10px;
-  text-align: center;
-  vertical-align: top;
-  font-size: clamp(12px, 2.8vw, 14px);
-  line-height: 1.25;
-  background: #fff;
-  word-break: keep-all;
-  white-space: nowrap;
-}
-
-.shift-table th:not(.week-col),
-.shift-table td { width: 120px; }
-.shift-table .week-col { width: 84px; min-width: 84px; }
-
-.shift-table tbody tr:nth-child(even) td {
-  background: var(--bg-alt);
-}
-
-/* sticky */
-.sticky-top {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  background: var(--head-bg);
-}
-.sticky-left {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: var(--head-bg);
-  box-shadow: 1px 0 0 var(--border);
-}
-
-/* ==============================
-   日付・スロット
-============================== */
-.day-head {
-  font-weight: 600;
-  margin-bottom: 6px;
-  white-space: nowrap;
-}
-.save {
-  display: inline-block;
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: #eef2ff;
-  border: 1px solid #c7d2fe;
-  margin-left: 4px;
-}
-
-.slot {
-  text-align: left;
-  display: block;
-  padding: 6px 8px;
-  margin: 4px 0;
-  border: 1px dashed #e2e8f0;
-  border-radius: 6px;
-  background: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* シフト種別バッジ */
-.badge {
-  display: inline-block;
-  font-weight: 600;
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: var(--badge);
-  margin-right: 6px;
-  border: 1px solid #e5e7eb;
-}
-.badge.dawn::before  { content: "🌅 "; }
-.badge.am::before    { content: "☀️ "; }
-.badge.pm::before    { content: "🌤 "; }
-.badge.eve::before   { content: "🌆 "; }
-.badge.night::before { content: "🌙 "; }
-
-.placeholder {
-  color: #64748b;
-  text-align: left;
-  padding: 14px;
-}
-
-/* ==============================
-   スマホ最適化
-============================== */
-@media (max-width: 640px) {
-  .shift-table { min-width: 640px; }
-  .shift-table th:not(.week-col),
-  .shift-table td { width: 100px; }
-  .shift-table .week-col { width: 72px; min-width: 72px; }
-
-  .shift-table th,
-  .shift-table td {
-    padding: 6px 6px;
-    font-size: 11px;
-    line-height: 1.2;
+/* 小さめ画面でのセル最小幅を下げる */
+@media (max-width: 1200px){
+  .cal-header, .cal-row{
+    grid-template-columns: 64px repeat(7, minmax(120px,1fr));
   }
-
-  .day-head { font-size: 12px; margin-bottom: 4px; }
-  .save { font-size: 10px; padding: 1px 5px; }
-
-  .slot { padding: 4px 6px; margin: 3px 0; line-height: 1.2; }
-
-  .badge { font-size: 0; padding: 0; border: none; background: transparent; }
-  .badge::before { font-size: 14px; }
-  .sticky-top { box-shadow: 0 2px 0 rgba(15,23,42,.06); }
-  .sticky-left { box-shadow: 1px 0 0 rgba(15,23,42,.08); }
-}
-@media (max-width: 380px) {
-  .shift-table { min-width: 600px; }
-  .shift-table th:not(.week-col),
-  .shift-table td { width: 96px; }
-  .shift-table .week-col { width: 68px; min-width: 68px; }
-  .slot { padding: 3px 5px; margin: 2px 0; }
-  .badge::before { font-size: 13px; }
-}
-
-/* ==============================
-   保存バー・ボタン
-============================== */
-.edit-toolbar{
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  background: #fff;
-  padding: 8px 12px;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  gap: 8px;
-}
-.edit-toolbar.sticky-footer{
-  top: auto;
-  bottom: 0;
-  border-top: 1px solid #e5e7eb;
-  border-bottom: none;
-}
-
-.btn{
-  display: inline-block;
-  padding: 8px 14px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  background: #f8fafc;
-  font-size: 14px;
-  text-decoration: none;
-  color: #0f172a;
-}
-.btn-primary{
-  background: #2563eb;
-  border-color: #1d4ed8;
-  color: #fff;
-}
-.btn:active{ transform: translateY(1px); }
-/* ===== Save bar (sticky bottom) ===== */
-.save-bar {
-  position: sticky;
-  bottom: 0;
-  z-index: 50;
-  background: rgba(255,255,255,0.96);
-  border-top: 1px solid #e5e7eb;
-  padding: 10px 12px;
-  backdrop-filter: saturate(180%) blur(4px);
-}
-.save-bar .container {
-  max-width: 960px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* Buttons (上書き可) */
-.btn {
-  display: inline-block;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  cursor: pointer;
-  font: inherit;
-}
-.btn:disabled { opacity: .6; cursor: default; }
-.btn-primary {
-  border-color: #2563eb;
-  background: #3b82f6;
-  color: #fff;
-  font-weight: 600;
-}
-.btn-primary:hover { filter: brightness(0.97); }
-
-/* モバイルは下端固定＆左右いっぱい */
-@media (max-width: 640px) {
-  .save-bar { position: fixed; left: 0; right: 0; }
-  .save-bar .container { padding: 0 12px; }
-  /* 入力UIのタップ最適化 */
-  input[type="text"], input[type="password"], select, button, .btn {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 12px 14px;
-    font-size: 16px;
-  }
-  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .table-wrap table { min-width: 720px; }
 }

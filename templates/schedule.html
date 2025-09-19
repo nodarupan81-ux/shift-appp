@@ -1,178 +1,95 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>シフト編集 | {{ store_name }}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-    .container{max-width:1100px;margin:0 auto;padding:0 12px;}
-    .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:14px 0;flex-wrap:wrap}
-    .toolbar .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .btn{display:inline-block;padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font:inherit}
-    .btn-primary{border-color:#2563eb;background:#3b82f6;color:#fff;font-weight:600}
-    .btn-link{border-color:#e5e7eb;background:#f9fafb}
-    .flash{margin:12px 0;padding:10px 12px;border-radius:8px}
-    .flash.success{background:#e6ffed;border:1px solid #b7ebc6}
-    .flash.error{background:#ffecec;border:1px solid #ffb5b5}
-    .save-bar{position:sticky;bottom:0;z-index:20;background:rgba(255,255,255,.96);border-top:1px solid #e5e7eb;padding:10px 12px;backdrop-filter:saturate(180%) blur(4px)}
-    .save-bar .container{display:flex;justify-content:flex-end}
+{% extends "base.html" %}
+{% block title %}{{ STORES.get(store_id, store_id) }} - {{ year }}年{{ month }}月 シフト編集{% endblock %}
 
-    /* ===== PC：週ごとの表 ===== */
-    .desktop-table{display:block}
-    .mobile-cards{display:none}
-    .table-wrap{overflow-x:auto}
-    table{border-collapse:collapse;width:100%;min-width:980px}
-    th,td{border:1px solid #e5e7eb;padding:8px;vertical-align:top}
-    th{background:#f7fafc;text-align:center}
-    .day-cell{min-width:180px}
-    .day-title{font-weight:700;margin-bottom:6px}
-    .shift-block{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
+{% block content %}
+<h1>{{ STORES.get(store_id, store_id) }} - {{ year }}年{{ month }}月 シフト編集</h1>
 
-    /* ===== スマホ：1日ごとのカード ===== */
-    @media (max-width: 768px){
-      .desktop-table{display:none}
-      .mobile-cards{display:block}
-      .card{border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin:10px 0;background:#fff}
-      .card h3{margin:0 0 8px}
-      .shift-block{grid-template-columns:1fr}
-      input,select,button{width:100%;box-sizing:border-box;padding:12px 14px;font-size:16px}
-      table{min-width:720px}
-    }
-  </style>
-</head>
-<body>
-<div class="container">
-  <h1>シフト編集（{{ year }}年{{ month }}月）</h1>
+<div class="navline">
+  <a class="btn" href="{{ url_for('schedule', store_id=store_id, year=prev_y, month=prev_m) }}">« 前月</a>
+  <a class="btn" href="{{ url_for('schedule', store_id=store_id, year=next_y, month=next_m) }}">次月 »</a>
+  <div class="spacer"></div>
+  <a class="btn" href="{{ url_for('settings', store_id=store_id) }}">スタッフ名の設定</a>
+  <a class="btn" href="{{ url_for('view', store_id=store_id, year=year, month=month) }}">閲覧</a>
+  <a class="btn" href="{{ url_for('logout', store_id=store_id) }}">ログアウト</a>
+</div>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="flash {{ category }}">{{ message }}</div>
+<form method="post">
+  {% set first_wday = calendar.weekday(year, month, 1) %}
+  {% set nd = ndays %}
+
+  <div class="only-desktop cal">
+    <div class="cal-header">
+      <div class="col week">週</div>
+      {% for wd in range(7) %}
+        <div class="col">{{ ["日","月","火","水","木","金","土"][wd] }}</div>
       {% endfor %}
-    {% endif %}
-  {% endwith %}
-
-  <form method="post" action="{{ url_for('schedule', store_id=store_id) }}">
-    <input type="hidden" name="year"  value="{{ year }}">
-    <input type="hidden" name="month" value="{{ month }}">
-
-    <div class="toolbar">
-      <div class="left"><strong>{{ store_name }}</strong></div>
-      <div class="right">
-        <a class="btn btn-link" href="{{ url_for('settings', store_id=store_id) }}">スタッフ名の設定</a>
-        <a class="btn" href="{{ url_for('schedule', store_id=store_id, year=prev_year, month=prev_month) }}">← 前月</a>
-        <select onchange="location.href=this.value">
-          {% for y in year_options %}
-            {% for m in month_options %}
-              <option value="{{ url_for('schedule', store_id=store_id, year=y, month=m) }}"
-                {% if y==year and m==month %}selected{% endif %}>{{ y }}年 {{ m }}月</option>
-            {% endfor %}
-          {% endfor %}
-        </select>
-        <a class="btn" href="{{ url_for('schedule', store_id=store_id, year=next_year, month=next_month) }}">次月 →</a>
-        <button type="submit" class="btn btn-primary">保存する</button>
-      </div>
     </div>
 
-    <!-- ===== PC：週ごとの表（Sun→Sat） ===== -->
-    <div class="desktop-table">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:80px">週</th>
-              <th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for week in weeks %}
-              <tr>
-                <th>第{{ loop.index }}週</th>
-                {% for day in week %}
-                  <td class="day-cell">
-                    {% if day == 0 %}
-                      <div class="day-title" style="opacity:.5">—</div>
-                    {% else %}
-                      {% set d = day|string %}
-                      <div class="day-title">{{ day }}日</div>
-                      {% for s in shifts %}
-                        {% set cur = prefill.get(d, {}).get(s, ["",""]) %}
-                        <div class="shift-block">
-                          <label>
-                            {{ shifts_labels[s] }}（1）
-                            <select name="day_{{ day }}_{{ s }}_1">
-                              <option value=""></option>
-                              {% for emp in employees %}
-                                <option value="{{ emp }}" {% if cur[0]==emp %}selected{% endif %}>{{ emp }}</option>
-                              {% endfor %}
-                            </select>
-                          </label>
-                          <label>
-                            {{ shifts_labels[s] }}（2）
-                            <select name="day_{{ day }}_{{ s }}_2">
-                              <option value=""></option>
-                              {% for emp in employees %}
-                                <option value="{{ emp }}" {% if cur[1]==emp %}selected{% endif %}>{{ emp }}</option>
-                              {% endfor %}
-                            </select>
-                          </label>
-                        </div>
+    {% for w in range(6) %}
+      <div class="cal-row">
+        <div class="col week">第{{ w+1 }}週</div>
+        {% for wd in range(7) %}
+          {% set d = (w*7 + wd - first_wday + 1) %}
+          {% if 1 <= d <= nd %}
+            {% set cls = "day" %}
+            {% if wd == 0 %}{% set cls = cls + " sun" %}{% elif wd == 6 %}{% set cls = cls + " sat" %}{% endif %}
+            <div class="cell {{ cls }}">
+              <div class="daynum">{{ d }}日</div>
+              <div class="shifts">
+                {% for key, label, cap in [("am0","早朝",1),("am","午前",2),("pm","午後",2),("eve","夕方",2),("night","深夜",1)] %}
+                  <div class="shift-line">
+                    <div class="shift-label">{{ label }}</div>
+                    <div class="shift-names">
+                      {% for i in range(cap) %}
+                        {% set current = (data.get(d|string, {}).get(key, [])|default([])) %}
+                        {% set val = current[i] if i < len(current) else "" %}
+                        <select name="e_{{ '%02d' % d }}_{{ key }}_{{ i+1 }}" class="pill">
+                          <option value="">（未選択）</option>
+                          {% for n in names %}
+                            <option value="{{ n }}" {% if n==val %}selected{% endif %}>{{ n }}</option>
+                          {% endfor %}
+                        </select>
                       {% endfor %}
-                    {% endif %}
-                  </td>
+                    </div>
+                  </div>
                 {% endfor %}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ===== スマホ：1日ごとのカード ===== -->
-    <div class="mobile-cards">
-      {% for week in weeks %}
-        {% for day in week %}
-          {% if day != 0 %}
-            {% set d = day|string %}
-            <div class="card">
-              <h3>{{ day }}日</h3>
-              {% for s in shifts %}
-                {% set cur = prefill.get(d, {}).get(s, ["",""]) %}
-                <div class="shift-block">
-                  <label>
-                    {{ shifts_labels[s] }}（1）
-                    <select name="day_{{ day }}_{{ s }}_1">
-                      <option value=""></option>
-                      {% for emp in employees %}
-                        <option value="{{ emp }}" {% if cur[0]==emp %}selected{% endif %}>{{ emp }}</option>
-                      {% endfor %}
-                    </select>
-                  </label>
-                  <label>
-                    {{ shifts_labels[s] }}（2）
-                    <select name="day_{{ day }}_{{ s }}_2">
-                      <option value=""></option>
-                      {% for emp in employees %}
-                        <option value="{{ emp }}" {% if cur[1]==emp %}selected{% endif %}>{{ emp }}</option>
-                      {% endfor %}
-                    </select>
-                  </label>
-                </div>
-              {% endfor %}
+              </div>
             </div>
+          {% else %}
+            <div class="cell"></div>
           {% endif %}
         {% endfor %}
-      {% endfor %}
-    </div>
-
-    <div class="save-bar">
-      <div class="container">
-        <button type="submit" class="btn btn-primary">保存する</button>
       </div>
-    </div>
-  </form>
-</div>
-</body>
-</html>
+    {% endfor %}
+  </div>
+
+  <div class="only-mobile">
+    {% for d in range(1, nd+1) %}
+      <div class="card">
+        <div class="daynum">{{ d }}日</div>
+        {% for key, label, cap in [("am0","早朝",1),("am","午前",2),("pm","午後",2),("eve","夕方",2),("night","深夜",1)] %}
+          <div class="shift-line">
+            <div class="shift-label">{{ label }}</div>
+            <div class="shift-names">
+              {% set current = (data.get(d|string, {}).get(key, [])|default([])) %}
+              {% for i in range(cap) %}
+                {% set val = current[i] if i < len(current) else "" %}
+                <select name="e_{{ '%02d' % d }}_{{ key }}_{{ i+1 }}" class="pill">
+                  <option value="">（未選択）</option>
+                  {% for n in names %}
+                    <option value="{{ n }}" {% if n==val %}selected{% endif %}>{{ n }}</option>
+                  {% endfor %}
+                </select>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <div style="margin-top:16px">
+    <button class="btn btn-primary" type="submit">保存する</button>
+  </div>
+</form>
+{% endblock %}

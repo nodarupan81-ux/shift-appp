@@ -1,18 +1,38 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>シフト管理アプリ</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ site_name }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <header class="site-header">
-    <h1 class="site-title">シフト管理アプリ</h1>
-  </header>
+<header class="site-header">
+  <div class="container">
+    <div class="site-title">{{ site_name }}</div>
+    <nav class="site-nav">
+      {% if store_id %}
+        <a href="{{ url_for('schedule', store_id=store_id) }}">シフト編集</a>
+        <a href="{{ url_for('view', store_id=store_id) }}">閲覧</a>
+        <a href="{{ url_for('settings', store_id=store_id) }}">スタッフ名の設定</a>
+        <a href="{{ url_for('logout', store_id=store_id) }}">ログアウト</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
 
-  <main class="container">
-    {% block content %}{% endblock %}
-  </main>
+<main class="container">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+      <div class="flash-wrap">
+        {% for cat, msg in msgs %}
+          <div class="flash {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
 </body>
 </html>

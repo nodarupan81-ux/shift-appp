@@ -6,3 +6,7 @@ cloudflared.exe
 *.db
 *.bak
 *.bak.*
+
+*.bak
+
+*.bak.*
